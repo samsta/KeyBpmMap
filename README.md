@@ -19,7 +19,7 @@ It reads a local SQLite database in the browser with `sql.js`, converts Engine n
 ## Local development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -27,6 +27,29 @@ Open the Vite dev server URL in your browser, then either:
 
 1. Load a local Engine DJ SQLite database file (`.db`, `.sqlite`, `.sqlite3`, `.backup`), or
 2. Use the built-in mock crate to explore the interface without a real library.
+
+## Verifying a local checkout
+
+Because browsers restrict some file loading behavior on plain `file://` pages, verify the app through a local web server instead of opening `dist/index.html` directly.
+
+For an interactive local checkout:
+
+```bash
+npm ci
+npm run dev
+```
+
+Then open the local URL printed by Vite (usually `http://localhost:5173/`).
+
+For a production-like local check:
+
+```bash
+npm ci
+npm run build
+npm run preview
+```
+
+Then open the preview URL printed by Vite (usually `http://localhost:4173/`).
 
 ## Build and lint
 
