@@ -191,6 +191,8 @@ function App() {
         if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
           return
         }
+
+        console.warn('Falling back to the browser file input.', caughtError)
       }
     }
 
@@ -233,7 +235,7 @@ function App() {
             {' '}
             on macOS or
             {' '}
-            <code>{'C:\\Users\\{your_username}\\Music\\Engine Library\\Database2\\m.db'}</code>
+            <code>%USERPROFILE%\Music\Engine Library\Database2\m.db</code>
             {' '}
             on Windows.
           </p>

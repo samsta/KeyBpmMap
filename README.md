@@ -31,7 +31,7 @@ Open the Vite dev server URL in your browser, then either:
 Typical Engine DJ database locations:
 
 - macOS: `$HOME/Music/Engine Library/Database2/m.db`
-- Windows: `C:\Users\{your_username}\Music\Engine Library\Database2\m.db`
+- Windows: `%USERPROFILE%\Music\Engine Library\Database2\m.db`
 
 ## Verifying a local checkout
 
