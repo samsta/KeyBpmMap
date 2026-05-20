@@ -42,6 +42,7 @@ interface OpenFilePickerConfig {
 }
 
 type PolarKeyMode = 'both' | 'A' | 'B'
+const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
 
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
@@ -134,9 +135,10 @@ function App() {
         : CAMELOT_KEYS.filter((camelotKey) => camelotKey.endsWith(polarKeyMode)),
     [polarKeyMode],
   )
+  const polarKeySet = useMemo(() => new Set(polarKeys), [polarKeys])
   const polarCells = useMemo(
-    () => densityCells.filter((cell) => polarKeys.includes(cell.camelotKey)),
-    [densityCells, polarKeys],
+    () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
+    [densityCells, polarKeySet],
   )
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
@@ -448,7 +450,7 @@ function App() {
             </div>
             <div className="chart-actions">
               <div className="segmented-control" role="group" aria-label="Polar key family">
-                {(['both', 'A', 'B'] as const).map((mode) => (
+                {POLAR_KEY_MODES.map((mode) => (
                   <button
                     key={mode}
                     type="button"
