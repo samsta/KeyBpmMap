@@ -233,7 +233,7 @@ function App() {
             {' '}
             on macOS or
             {' '}
-            <code>C:\Users\{`{your_username}`}\Music\Engine Library\Database2\m.db</code>
+            <code>{'C:\\Users\\{your_username}\\Music\\Engine Library\\Database2\\m.db'}</code>
             {' '}
             on Windows.
           </p>
