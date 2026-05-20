@@ -38,7 +38,8 @@ npm run lint
 ## Deployment
 
 The repository includes a GitHub Pages workflow in `.github/workflows/deploy.yml`.
-When the default branch is updated, the workflow builds the Vite app and deploys the generated static site to Pages.
+When `main` is updated, the workflow builds the Vite app and deploys the generated static site to Pages.
+Pull requests targeting `main` also run the same build and deploy flow so the branch can be reviewed against a live Pages deployment before merge.
 
 ## Notes
 
