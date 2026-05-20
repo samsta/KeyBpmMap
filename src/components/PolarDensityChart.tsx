@@ -1,12 +1,12 @@
 import { arc, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
-import { CAMELOT_KEYS } from '../lib/camelot'
 import type { BpmBand, DensityCell } from '../types'
 
 interface PolarDensityChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
+  keys: string[]
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
@@ -17,7 +17,7 @@ const outerRadius = 240
 const innerRadius = 64
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
-  ({ bands, cells, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const colorScale = useMemo(
       () => scaleSequential(interpolatePlasma).domain([0, maximum]),
@@ -48,10 +48,9 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
           })}
 
           {cells.map((cell) => {
-            const keyIndex = CAMELOT_KEYS.indexOf(cell.camelotKey)
-            const startAngle = (keyIndex / CAMELOT_KEYS.length) * Math.PI * 2 - Math.PI / 2
-            const endAngle =
-              ((keyIndex + 1) / CAMELOT_KEYS.length) * Math.PI * 2 - Math.PI / 2
+            const keyIndex = keys.indexOf(cell.camelotKey)
+            const startAngle = (keyIndex / keys.length) * Math.PI * 2 - Math.PI / 2
+            const endAngle = ((keyIndex + 1) / keys.length) * Math.PI * 2 - Math.PI / 2
             const ringSize = (outerRadius - innerRadius) / bands.length
             const path = arc()({
               innerRadius: innerRadius + ringSize * cell.bandIndex,
@@ -79,8 +78,8 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             )
           })}
 
-          {CAMELOT_KEYS.map((camelotKey, index) => {
-            const angle = ((index + 0.5) / CAMELOT_KEYS.length) * Math.PI * 2 - Math.PI / 2
+          {keys.map((camelotKey, index) => {
+            const angle = ((index + 0.5) / keys.length) * Math.PI * 2 - Math.PI / 2
             const labelRadius = outerRadius + 24
             const x = Math.cos(angle) * labelRadius
             const y = Math.sin(angle) * labelRadius

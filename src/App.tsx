@@ -13,6 +13,7 @@ import {
   summarizeTracks,
   summarizeTransitions,
 } from './lib/analysis'
+import { CAMELOT_KEYS } from './lib/camelot'
 import { loadEngineDjLibrary } from './lib/engineDj'
 import { downloadSvgAsPng } from './lib/exportSvg'
 import { createMockLibrary } from './lib/mockData'
@@ -40,6 +41,8 @@ interface OpenFilePickerConfig {
   }>
 }
 
+type PolarKeyMode = 'both' | 'A' | 'B'
+
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
   const [filters, setFilters] = useState(initialFilters)
@@ -47,6 +50,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [bpmBandSize, setBpmBandSize] = useState(DEFAULT_BPM_BAND_SIZE)
+  const [polarKeyMode, setPolarKeyMode] = useState<PolarKeyMode>('both')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
@@ -123,6 +127,17 @@ function App() {
     () => buildDensityCells(filteredTracks, bpmBands),
     [bpmBands, filteredTracks],
   )
+  const polarKeys = useMemo(
+    () =>
+      polarKeyMode === 'both'
+        ? CAMELOT_KEYS
+        : CAMELOT_KEYS.filter((camelotKey) => camelotKey.endsWith(polarKeyMode)),
+    [polarKeyMode],
+  )
+  const polarCells = useMemo(
+    () => densityCells.filter((cell) => polarKeys.includes(cell.camelotKey)),
+    [densityCells, polarKeys],
+  )
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
     [densityCells, selectedCellId],
@@ -139,6 +154,7 @@ function App() {
     setSelectedCellId(null)
     setFilters(initialFilters)
     setError(null)
+    setPolarKeyMode('both')
   }
 
   const loadLibraryFile = async (file: File | null) => {
@@ -154,6 +170,7 @@ function App() {
       setLibrary(nextLibrary)
       setSelectedCellId(null)
       setFilters(initialFilters)
+      setPolarKeyMode('both')
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -424,20 +441,42 @@ function App() {
           <div className="chart-header">
             <div>
               <h2>Polar harmonic density map</h2>
-              <p>Camelot wedges outside-in by {bpmBandSize} BPM ring.</p>
+              <p>
+                Camelot {polarKeyMode === 'both' ? 'A/B' : polarKeyMode}-side wedges outside-in
+                {' '}
+                by {bpmBandSize} BPM ring.
+              </p>
             </div>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => exportChart(polarRef.current, 'keybpmmap-polar.png')}
-            >
-              Export PNG
-            </button>
+            <div className="chart-actions">
+              <div className="segmented-control" role="group" aria-label="Polar key family">
+                {(['both', 'A', 'B'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
+                    onClick={() => {
+                      setPolarKeyMode(mode)
+                      setSelectedCellId(null)
+                    }}
+                  >
+                    {mode === 'both' ? 'A + B' : `${mode} only`}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => exportChart(polarRef.current, 'keybpmmap-polar.png')}
+              >
+                Export PNG
+              </button>
+            </div>
           </div>
           <PolarDensityChart
             ref={polarRef}
             bands={bpmBands}
-            cells={densityCells}
+            cells={polarCells}
+            keys={polarKeys}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
