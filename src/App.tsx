@@ -442,9 +442,8 @@ function App() {
             <div>
               <h2>Polar harmonic density map</h2>
               <p>
-                Camelot {polarKeyMode === 'both' ? 'A/B' : polarKeyMode}-side wedges outside-in
-                {' '}
-                by {bpmBandSize} BPM ring.
+                Camelot {polarKeyMode === 'both' ? 'A/B' : polarKeyMode}-side wedges outside-in by{' '}
+                {bpmBandSize} BPM ring.
               </p>
             </div>
             <div className="chart-actions">

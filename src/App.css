@@ -183,7 +183,7 @@ select {
 .segment-button {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 999px;
-  padding: 0.78rem 1rem;
+  padding: 0.8rem 1rem;
   font: inherit;
   color: #e2e8f0;
   background: rgba(148, 163, 184, 0.08);
