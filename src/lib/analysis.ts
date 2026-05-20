@@ -36,10 +36,12 @@ export function createBpmBands(
   }
 
   const minimumBpm = Math.floor(Math.min(...bpmValues) / normalizedBandSize) * normalizedBandSize
-  const maximumBpm = Math.floor(Math.max(...bpmValues) / normalizedBandSize) * normalizedBandSize
+  const maximumBpm = Math.max(...bpmValues)
+  const bandCount = Math.floor((maximumBpm - minimumBpm) / normalizedBandSize) + 1
 
   const bands: BpmBand[] = []
-  for (let start = minimumBpm; start <= maximumBpm; start += normalizedBandSize) {
+  for (let index = 0; index < bandCount; index += 1) {
+    const start = minimumBpm + index * normalizedBandSize
     bands.push({
       label: formatBpmBandLabel(start, normalizedBandSize),
       min: start,

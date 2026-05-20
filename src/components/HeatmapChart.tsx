@@ -14,11 +14,15 @@ interface HeatmapChartProps {
 const width = 920
 const margin = { top: 32, right: 24, bottom: 72, left: 76 }
 const BAND_HEIGHT_PX = 18
+const MIN_HEIGHT_PX = 420
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
   ({ bands, cells, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
-    const height = Math.max(420, margin.top + margin.bottom + bands.length * BAND_HEIGHT_PX)
+    const height = Math.max(
+      MIN_HEIGHT_PX,
+      margin.top + margin.bottom + bands.length * BAND_HEIGHT_PX,
+    )
     const colorScale = useMemo(
       () => scaleSequential(interpolateTurbo).domain([0, maximum]),
       [maximum],
