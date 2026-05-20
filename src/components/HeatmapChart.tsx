@@ -1,23 +1,23 @@
 import { scaleLinear, scaleSequential } from 'd3'
 import { interpolateTurbo } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
-import { BPM_BANDS } from '../lib/analysis'
 import { CAMELOT_KEYS } from '../lib/camelot'
-import type { DensityCell } from '../types'
+import type { BpmBand, DensityCell } from '../types'
 
 interface HeatmapChartProps {
+  bands: BpmBand[]
   cells: DensityCell[]
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
 
 const width = 920
-const height = 420
 const margin = { top: 32, right: 24, bottom: 72, left: 76 }
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
-  ({ cells, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
+    const height = Math.max(420, margin.top + margin.bottom + bands.length * 18)
     const colorScale = useMemo(
       () => scaleSequential(interpolateTurbo).domain([0, maximum]),
       [maximum],
@@ -32,9 +32,9 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
     const yScale = useMemo(
       () =>
         scaleLinear()
-          .domain([0, BPM_BANDS.length])
+          .domain([0, bands.length])
           .range([margin.top, height - margin.bottom]),
-      [],
+      [bands.length, height],
     )
 
     return (
@@ -91,7 +91,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
           )
         })}
 
-        {BPM_BANDS.map((band, index) => {
+        {bands.map((band, index) => {
           const y = yScale(index + 0.5)
           return (
             <text

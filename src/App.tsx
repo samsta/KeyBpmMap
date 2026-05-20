@@ -3,9 +3,13 @@ import './App.css'
 import HeatmapChart from './components/HeatmapChart'
 import PolarDensityChart from './components/PolarDensityChart'
 import {
-  BPM_BANDS,
   buildDensityCells,
+  clampBpmBandSize,
+  createBpmBands,
+  DEFAULT_BPM_BAND_SIZE,
   findSparseCells,
+  MAX_BPM_BAND_SIZE,
+  MIN_BPM_BAND_SIZE,
   summarizeTracks,
   summarizeTransitions,
 } from './lib/analysis'
@@ -28,6 +32,7 @@ function App() {
   const [selectedCellId, setSelectedCellId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [bpmBandSize, setBpmBandSize] = useState(DEFAULT_BPM_BAND_SIZE)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
@@ -96,7 +101,14 @@ function App() {
     })
   }, [filteredTrackIds, filters.playlistId, library.transitions])
 
-  const densityCells = useMemo(() => buildDensityCells(filteredTracks), [filteredTracks])
+  const bpmBands = useMemo(
+    () => createBpmBands(filteredTracks, bpmBandSize),
+    [bpmBandSize, filteredTracks],
+  )
+  const densityCells = useMemo(
+    () => buildDensityCells(filteredTracks, bpmBands),
+    [bpmBands, filteredTracks],
+  )
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
     [densityCells, selectedCellId],
@@ -290,6 +302,29 @@ function App() {
               }
             />
           </label>
+
+          <label>
+            BPM band size
+            <select
+              value={bpmBandSize}
+              onChange={(event) => {
+                setBpmBandSize(clampBpmBandSize(Number(event.target.value)))
+                setSelectedCellId(null)
+              }}
+            >
+              {Array.from(
+                { length: MAX_BPM_BAND_SIZE - MIN_BPM_BAND_SIZE + 1 },
+                (_, index) => {
+                  const value = MIN_BPM_BAND_SIZE + index
+                  return (
+                    <option key={value} value={value}>
+                      {value} BPM
+                    </option>
+                  )
+                },
+              )}
+            </select>
+          </label>
         </div>
       </section>
 
@@ -302,7 +337,9 @@ function App() {
         <article className="panel stat-card">
           <span>Average BPM</span>
           <strong>{summary.averageBpm ? summary.averageBpm.toFixed(1) : '—'}</strong>
-          <p>{BPM_BANDS.length} concentric BPM bands</p>
+          <p>
+            {bpmBands.length} bands at {bpmBandSize} BPM granularity
+          </p>
         </article>
         <article className="panel stat-card">
           <span>Average rating</span>
@@ -321,7 +358,7 @@ function App() {
           <div className="chart-header">
             <div>
               <h2>Polar harmonic density map</h2>
-              <p>Camelot wedges outside-in by BPM ring.</p>
+              <p>Camelot wedges outside-in by {bpmBandSize} BPM ring.</p>
             </div>
             <button
               type="button"
@@ -333,6 +370,7 @@ function App() {
           </div>
           <PolarDensityChart
             ref={polarRef}
+            bands={bpmBands}
             cells={densityCells}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
@@ -355,6 +393,7 @@ function App() {
           </div>
           <HeatmapChart
             ref={heatmapRef}
+            bands={bpmBands}
             cells={densityCells}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}

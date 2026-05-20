@@ -8,31 +8,69 @@ import type {
   TransitionSummary,
 } from '../types'
 
-export const BPM_BANDS: BpmBand[] = [
-  { label: '<90', min: 0, max: 90 },
-  { label: '90-109', min: 90, max: 110 },
-  { label: '110-123', min: 110, max: 124 },
-  { label: '124-127', min: 124, max: 128 },
-  { label: '128-134', min: 128, max: 135 },
-  { label: '135+', min: 135, max: null },
-]
+export const DEFAULT_BPM_BAND_SIZE = 1
+export const MIN_BPM_BAND_SIZE = 1
+export const MAX_BPM_BAND_SIZE = 15
 
-export function getBpmBandIndex(bpm: number | null): number {
+export function clampBpmBandSize(value: number): number {
+  return Math.min(MAX_BPM_BAND_SIZE, Math.max(MIN_BPM_BAND_SIZE, Math.round(value)))
+}
+
+export function createBpmBands(
+  tracks: TrackRecord[],
+  bandSize = DEFAULT_BPM_BAND_SIZE,
+): BpmBand[] {
+  const normalizedBandSize = clampBpmBandSize(bandSize)
+  const bpmValues = tracks
+    .map((track) => track.bpm)
+    .filter((bpm): bpm is number => bpm !== null && Number.isFinite(bpm))
+
+  if (bpmValues.length === 0) {
+    return [
+      {
+        label: formatBpmBandLabel(0, normalizedBandSize),
+        min: 0,
+        max: normalizedBandSize,
+      },
+    ]
+  }
+
+  const minimumBpm = Math.floor(Math.min(...bpmValues) / normalizedBandSize) * normalizedBandSize
+  const maximumBpm = Math.floor(Math.max(...bpmValues) / normalizedBandSize) * normalizedBandSize
+
+  const bands: BpmBand[] = []
+  for (let start = minimumBpm; start <= maximumBpm; start += normalizedBandSize) {
+    bands.push({
+      label: formatBpmBandLabel(start, normalizedBandSize),
+      min: start,
+      max: start + normalizedBandSize,
+    })
+  }
+
+  return bands
+}
+
+function formatBpmBandLabel(start: number, bandSize: number): string {
+  const end = start + bandSize
+  return `${start}–<${end}`
+}
+
+export function getBpmBandIndex(bpm: number | null, bands: BpmBand[]): number {
   if (bpm === null) {
     return -1
   }
 
-  return BPM_BANDS.findIndex(
+  return bands.findIndex(
     (band) => bpm >= band.min && (band.max === null || bpm < band.max),
   )
 }
 
-export function buildDensityCells(tracks: TrackRecord[]): DensityCell[] {
-  return BPM_BANDS.flatMap((band, bandIndex) =>
+export function buildDensityCells(tracks: TrackRecord[], bands: BpmBand[]): DensityCell[] {
+  return bands.flatMap((band, bandIndex) =>
     CAMELOT_KEYS.map((camelotKey) => {
       const cellTracks = tracks.filter(
         (track) =>
-          track.camelotKey === camelotKey && getBpmBandIndex(track.bpm) === bandIndex,
+          track.camelotKey === camelotKey && getBpmBandIndex(track.bpm, bands) === bandIndex,
       )
 
       return {

@@ -1,11 +1,11 @@
 import { arc, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
-import { BPM_BANDS } from '../lib/analysis'
 import { CAMELOT_KEYS } from '../lib/camelot'
-import type { DensityCell } from '../types'
+import type { BpmBand, DensityCell } from '../types'
 
 interface PolarDensityChartProps {
+  bands: BpmBand[]
   cells: DensityCell[]
   selectedCellId: string | null
   onSelect: (cellId: string) => void
@@ -17,7 +17,7 @@ const outerRadius = 240
 const innerRadius = 64
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
-  ({ cells, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const colorScale = useMemo(
       () => scaleSequential(interpolatePlasma).domain([0, maximum]),
@@ -34,9 +34,9 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
       >
         <rect width={width} height={height} fill="#080b14" rx="20" />
         <g transform={`translate(${width / 2}, ${height / 2})`}>
-          {BPM_BANDS.map((band, index) => {
+          {bands.map((band, index) => {
             const radius =
-              innerRadius + ((outerRadius - innerRadius) / BPM_BANDS.length) * (index + 1)
+              innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1)
             return (
               <g key={band.label}>
                 <circle r={radius} fill="none" stroke="rgba(255,255,255,0.12)" />
@@ -52,7 +52,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             const startAngle = (keyIndex / CAMELOT_KEYS.length) * Math.PI * 2 - Math.PI / 2
             const endAngle =
               ((keyIndex + 1) / CAMELOT_KEYS.length) * Math.PI * 2 - Math.PI / 2
-            const ringSize = (outerRadius - innerRadius) / BPM_BANDS.length
+            const ringSize = (outerRadius - innerRadius) / bands.length
             const path = arc()({
               innerRadius: innerRadius + ringSize * cell.bandIndex,
               outerRadius: innerRadius + ringSize * (cell.bandIndex + 1) - 3,
