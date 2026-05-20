@@ -51,8 +51,11 @@ export function createBpmBands(
 }
 
 function formatBpmBandLabel(start: number, bandSize: number): string {
-  const end = start + bandSize
-  return `${start}–<${end}`
+  if (bandSize === 1) {
+    return `${start}`
+  }
+
+  return `${start}-${start + bandSize - 1}`
 }
 
 export function getBpmBandIndex(bpm: number | null, bands: BpmBand[]): number {
