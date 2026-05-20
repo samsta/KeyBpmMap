@@ -26,6 +26,20 @@ const initialFilters = {
   bpmMax: '',
 }
 
+interface OpenFileHandle {
+  getFile: () => Promise<File>
+}
+
+interface OpenFilePickerConfig {
+  id?: string
+  multiple?: boolean
+  startIn?: 'music'
+  types?: Array<{
+    description?: string
+    accept: Record<string, string[]>
+  }>
+}
+
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
   const [filters, setFilters] = useState(initialFilters)
@@ -127,8 +141,7 @@ function App() {
     setError(null)
   }
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const loadLibraryFile = async (file: File | null) => {
     if (!file) {
       return
     }
@@ -149,8 +162,44 @@ function App() {
       )
     } finally {
       setLoading(false)
-      event.target.value = ''
     }
+  }
+
+  const handleOpenDatabase = async () => {
+    const pickerWindow = window as Window & {
+      showOpenFilePicker?: (options?: OpenFilePickerConfig) => Promise<OpenFileHandle[]>
+    }
+
+    if (pickerWindow.showOpenFilePicker) {
+      try {
+        const [fileHandle] = await pickerWindow.showOpenFilePicker({
+          id: 'engine-dj-database',
+          multiple: false,
+          startIn: 'music',
+          types: [
+            {
+              description: 'Engine DJ database',
+              accept: {
+                'application/octet-stream': ['.db', '.sqlite', '.sqlite3', '.backup'],
+              },
+            },
+          ],
+        })
+        await loadLibraryFile(await fileHandle.getFile())
+        return
+      } catch (caughtError) {
+        if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
+          return
+        }
+      }
+    }
+
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    await loadLibraryFile(event.target.files?.[0] ?? null)
+    event.target.value = ''
   }
 
   const exportChart = async (
@@ -178,7 +227,15 @@ function App() {
           <p className="lede">
             Load a local Engine DJ SQLite database in the browser, inspect harmonic and
             tempo hotspots, and drill into sparse areas or playlist transitions without
-            uploading your library anywhere.
+            uploading your library anywhere. Engine DJ usually stores it at
+            {' '}
+            <code>$HOME/Music/Engine Library/Database2/m.db</code>
+            {' '}
+            on macOS or
+            {' '}
+            <code>C:\Users\{`{your_username}`}\Music\Engine Library\Database2\m.db</code>
+            {' '}
+            on Windows.
           </p>
         </div>
 
@@ -186,7 +243,7 @@ function App() {
           <button
             type="button"
             className="primary-button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleOpenDatabase}
             disabled={loading}
           >
             {loading ? 'Loading database…' : 'Load Engine DJ database'}
@@ -205,6 +262,7 @@ function App() {
 
         <ul className="hero-notes">
           <li>Reads SQLite locally with sql.js (WASM).</li>
+          <li>On supported browsers, the picker starts in your Music folder.</li>
           <li>Understands Track / Playlist / PlaylistEntity relationships.</li>
           <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
         </ul>

@@ -28,6 +28,11 @@ Open the Vite dev server URL in your browser, then either:
 1. Load a local Engine DJ SQLite database file (`.db`, `.sqlite`, `.sqlite3`, `.backup`), or
 2. Use the built-in mock crate to explore the interface without a real library.
 
+Typical Engine DJ database locations:
+
+- macOS: `$HOME/Music/Engine Library/Database2/m.db`
+- Windows: `C:\Users\{your_username}\Music\Engine Library\Database2\m.db`
+
 ## Verifying a local checkout
 
 Because browsers restrict some file loading behavior on plain `file://` pages, verify the app through a local web server instead of opening `dist/index.html` directly.
