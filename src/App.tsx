@@ -180,6 +180,8 @@ function App() {
             {
               description: 'Engine DJ database',
               accept: {
+                'application/vnd.sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
+                'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
                 'application/octet-stream': ['.db', '.sqlite', '.sqlite3', '.backup'],
               },
             },
@@ -231,7 +233,7 @@ function App() {
             tempo hotspots, and drill into sparse areas or playlist transitions without
             uploading your library anywhere. Engine DJ usually stores it at
             {' '}
-            <code>$HOME/Music/Engine Library/Database2/m.db</code>
+            <code>~/Music/Engine Library/Database2/m.db</code>
             {' '}
             on macOS or
             {' '}
