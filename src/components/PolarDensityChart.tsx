@@ -38,12 +38,12 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             const radius =
               innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1)
             return (
-              <g key={band.label}>
-                <circle r={radius} fill="none" stroke="rgba(255,255,255,0.12)" />
-                <text x={0} y={-radius + 14} textAnchor="middle" className="chart-label muted">
-                  {band.label}
-                </text>
-              </g>
+              <circle
+                key={band.label}
+                r={radius}
+                fill="none"
+                stroke="rgba(255,255,255,0.12)"
+              />
             )
           })}
 
@@ -75,6 +75,16 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
                   .map((track) => `${track.artist} — ${track.title}`)
                   .join('\n')}`}</title>
               </path>
+            )
+          })}
+
+          {bands.map((band, index) => {
+            const radius =
+              innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1)
+            return (
+              <text key={`${band.label}-label`} x={0} y={-radius + 14} textAnchor="middle" className="chart-label muted">
+                {band.label}
+              </text>
             )
           })}
 
