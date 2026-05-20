@@ -39,8 +39,8 @@ npm run lint
 
 The repository includes a GitHub Pages workflow in `.github/workflows/deploy.yml`.
 When `main` is updated, the workflow builds the Vite app and deploys the generated static site to Pages.
-Pull requests targeting `main` always run the build, and same-repository PRs deploy to Pages when they carry the `deploy-preview` label.
-Those PR deployments are tracked under a separate `github-pages-preview` environment entry, but GitHub Pages still serves a single live site URL, so the latest main/preview deployment is the one reviewers will see.
+Pull requests targeting `main` run the same build so changes are validated before merge, but they do not publish a separate preview site.
+With this single-site GitHub Pages setup, the custom Actions workflow still publishes one live Pages URL for the repository, so isolated PR previews would require separate hosting or a second Pages site/repository.
 
 ## Notes
 
