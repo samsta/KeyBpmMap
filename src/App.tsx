@@ -233,11 +233,15 @@ function App() {
             tempo hotspots, and drill into sparse areas or playlist transitions without
             uploading your library anywhere. Engine DJ usually stores it at
             {' '}
-            <code>~/Music/Engine Library/Database2/m.db</code>
+            <code aria-label="macOS Engine DJ database path">
+              ~/Music/Engine Library/Database2/m.db
+            </code>
             {' '}
             on macOS or
             {' '}
-            <code>%USERPROFILE%\Music\Engine Library\Database2\m.db</code>
+            <code aria-label="Windows Engine DJ database path">
+              %USERPROFILE%\Music\Engine Library\Database2\m.db
+            </code>
             {' '}
             on Windows.
           </p>
