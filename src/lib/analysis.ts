@@ -225,6 +225,6 @@ function formatSparseBandLabel(bands: BpmBand[], startIndex: number, endIndex: n
     return startBand.label
   }
 
-  const rangeMaximum = endBand.max === null ? endBand.label : String(endBand.max - 1)
+  const rangeMaximum = endBand.max === null ? `${endBand.min}+` : String(endBand.max - 1)
   return `${startBand.min}-${rangeMaximum}`
 }

@@ -17,7 +17,7 @@ import { CAMELOT_KEYS } from './lib/camelot'
 import { loadEngineDjLibrary } from './lib/engineDj'
 import { downloadSvgAsPng } from './lib/exportSvg'
 import { createMockLibrary } from './lib/mockData'
-import type { LibraryData, TrackRecord } from './types'
+import type { LibraryData, SparseCellSummary, TrackRecord } from './types'
 
 const initialFilters = {
   playlistId: 'all',
@@ -548,8 +548,7 @@ function App() {
           {sparseCells.length > 0 ? (
             <ul className="simple-list sparse-list">
               {sparseCells.map((cell) => {
-                const status =
-                  cell.count === 0 ? 'empty' : cell.cellCount === 1 ? '1 track' : '1 track each'
+                const status = getSparseCellStatus(cell)
                 const regionSummary =
                   cell.cellCount === 1 ? '1 cell' : `${cell.cellCount} cells`
 
@@ -607,6 +606,14 @@ function formatRating(track: TrackRecord): string {
   }
 
   return `${track.rating.toFixed(1)}★`
+}
+
+function getSparseCellStatus(cell: SparseCellSummary): string {
+  if (cell.count === 0) {
+    return 'empty'
+  }
+
+  return cell.cellCount === 1 ? '1 track' : '1 track each'
 }
 
 export default App
