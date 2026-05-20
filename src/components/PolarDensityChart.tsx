@@ -19,6 +19,13 @@ const innerRadius = 64
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
+    const bandRadii = useMemo(
+      () =>
+        bands.map(
+          (_, index) => innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1),
+        ),
+      [bands],
+    )
     const colorScale = useMemo(
       () => scaleSequential(interpolatePlasma).domain([0, maximum]),
       [maximum],
@@ -34,18 +41,14 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
       >
         <rect width={width} height={height} fill="#080b14" rx="20" />
         <g transform={`translate(${width / 2}, ${height / 2})`}>
-          {bands.map((band, index) => {
-            const radius =
-              innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1)
-            return (
-              <circle
-                key={band.label}
-                r={radius}
-                fill="none"
-                stroke="rgba(255,255,255,0.12)"
-              />
-            )
-          })}
+          {bands.map((band, index) => (
+            <circle
+              key={band.label}
+              r={bandRadii[index]}
+              fill="none"
+              stroke="rgba(255,255,255,0.12)"
+            />
+          ))}
 
           {cells.map((cell) => {
             const keyIndex = keys.indexOf(cell.camelotKey)
@@ -78,15 +81,17 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             )
           })}
 
-          {bands.map((band, index) => {
-            const radius =
-              innerRadius + ((outerRadius - innerRadius) / bands.length) * (index + 1)
-            return (
-              <text key={`${band.label}-label`} x={0} y={-radius + 14} textAnchor="middle" className="chart-label muted">
-                {band.label}
-              </text>
-            )
-          })}
+          {bands.map((band, index) => (
+            <text
+              key={`${band.label}-label`}
+              x={0}
+              y={-bandRadii[index] + 14}
+              textAnchor="middle"
+              className="chart-label muted"
+            >
+              {band.label}
+            </text>
+          ))}
 
           {keys.map((camelotKey, index) => {
             const angle = ((index + 0.5) / keys.length) * Math.PI * 2 - Math.PI / 2
