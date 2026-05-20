@@ -52,6 +52,15 @@ export interface DensityCell {
   tracks: TrackRecord[]
 }
 
+export interface SparseCellSummary {
+  id: string
+  camelotKey: string
+  bandLabel: string
+  count: number
+  cellCount: number
+  firstCellId: string
+}
+
 export interface SummaryStats {
   totalTracks: number
   playableTracks: number

@@ -307,6 +307,36 @@ select {
   gap: 4px;
 }
 
+.sparse-list {
+  gap: 8px;
+  max-height: 24rem;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.sparse-list li {
+  padding: 10px 12px;
+}
+
+.sparse-list button,
+.sparse-summary {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.sparse-summary {
+  color: #e2e8f0;
+}
+
+.sparse-list small {
+  color: #94a3b8;
+  text-align: right;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -345,5 +375,14 @@ select {
   .simple-list button {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .sparse-list button,
+  .sparse-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sparse-list small {
+    text-align: left;
   }
 }

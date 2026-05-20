@@ -145,7 +145,7 @@ function App() {
     [densityCells, selectedCellId],
   )
   const summary = useMemo(() => summarizeTracks(filteredTracks), [filteredTracks])
-  const sparseCells = useMemo(() => findSparseCells(densityCells), [densityCells])
+  const sparseCells = useMemo(() => findSparseCells(densityCells, bpmBands), [bpmBands, densityCells])
   const topTransitions = useMemo(
     () => summarizeTransitions(filteredTransitions),
     [filteredTransitions],
@@ -545,17 +545,38 @@ function App() {
 
         <article className="panel insight-panel">
           <h2>Sparse / missing regions</h2>
-          <ul className="simple-list">
-            {sparseCells.map((cell) => (
-              <li key={cell.id}>
-                <button type="button" onClick={() => setSelectedCellId(cell.id)}>
-                  <strong>{cell.camelotKey}</strong>
-                  <span>{cell.bandLabel}</span>
-                  <em>{cell.count === 0 ? 'empty' : '1 track'}</em>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {sparseCells.length > 0 ? (
+            <ul className="simple-list sparse-list">
+              {sparseCells.map((cell) => {
+                const status =
+                  cell.count === 0 ? 'empty' : cell.cellCount === 1 ? '1 track' : '1 track each'
+                const regionSummary =
+                  cell.cellCount === 1 ? '1 cell' : `${cell.cellCount} cells`
+
+                return (
+                  <li key={`${cell.firstCellId}:${cell.id}`}>
+                    {cell.cellCount === 1 ? (
+                      <button type="button" onClick={() => setSelectedCellId(cell.firstCellId)}>
+                        <strong>{cell.camelotKey}</strong>
+                        <span>{cell.bandLabel}</span>
+                        <em>{status}</em>
+                        <small>{regionSummary}</small>
+                      </button>
+                    ) : (
+                      <div className="sparse-summary">
+                        <strong>{cell.camelotKey}</strong>
+                        <span>{cell.bandLabel}</span>
+                        <em>{status}</em>
+                        <small>{regionSummary}</small>
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <p className="placeholder-text">No sparse or empty regions remain after the current filters.</p>
+          )}
         </article>
 
         <article className="panel insight-panel">
