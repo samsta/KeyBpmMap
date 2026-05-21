@@ -84,6 +84,7 @@ describe('findNavigationPaths', () => {
       ...DEFAULT_PATH_FINDER_SETTINGS,
       allowKeyChangeByTempo: true,
       maxTotalCost: 10,
+      maxAverageStepCost: 10,
     })
 
     expect(enabled).toHaveLength(1)
@@ -106,6 +107,31 @@ describe('findNavigationPaths', () => {
     expect(paths).toHaveLength(1)
     expect(paths[0]?.steps[0]?.keyRule).toBe('energyDrop')
     expect(paths[0]?.totalCost).toBe(1)
+  })
+
+  it('enforces max step and average step cost limits', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '8B', 120),
+      makeTrack('mid', '8A', 120),
+    ]
+
+    const averageLimitedPaths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 10,
+      maxAverageStepCost: 1.1,
+      maxStepCost: 4,
+    })
+    expect(averageLimitedPaths).toHaveLength(1)
+    expect(averageLimitedPaths[0]?.trackIds).toEqual(['start', 'mid', 'end'])
+
+    const stepLimitedPaths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 10,
+      maxAverageStepCost: 3,
+      maxStepCost: 1.5,
+    })
+    expect(stepLimitedPaths).toEqual([])
   })
 
   it('returns no paths when either endpoint is missing', () => {

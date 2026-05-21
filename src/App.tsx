@@ -49,7 +49,13 @@ interface OpenFilePickerConfig {
 }
 
 type PolarKeyMode = 'both' | 'A' | 'B'
+type PathSortMode = 'total' | 'average' | 'max'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
+const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
+  { value: 'total', label: 'Total Cost' },
+  { value: 'average', label: 'Average Step Cost' },
+  { value: 'max', label: 'Max Step Cost' },
+]
 const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
 const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
 const PATH_FINDER_SETTINGS_STORAGE_KEY = 'keybpmmap.pathFinderSettings'
@@ -121,6 +127,7 @@ function App() {
   } | null>(null)
   const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
+  const [pathSortMode, setPathSortMode] = useState<PathSortMode>('total')
   const [showScopeTrackTable, setShowScopeTrackTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
@@ -273,19 +280,31 @@ function App() {
     },
     [pathScopeTracks, searchedPathSelection],
   )
+  const sortedNavigationPaths = useMemo(
+    () =>
+      [...navigationPaths].sort((left, right) => {
+        const metricDelta = getPathSortMetric(left, pathSortMode) - getPathSortMetric(right, pathSortMode)
+        if (metricDelta !== 0) {
+          return metricDelta
+        }
+
+        return left.totalCost - right.totalCost || left.steps.length - right.steps.length
+      }),
+    [navigationPaths, pathSortMode],
+  )
   const selectedPath = useMemo<NavigationPath | null>(
     () =>
-      navigationPaths.find((path) => path.id === selectedPathId) ??
-      navigationPaths[0] ??
+      sortedNavigationPaths.find((path) => path.id === selectedPathId) ??
+      sortedNavigationPaths[0] ??
       null,
-    [navigationPaths, selectedPathId],
+    [selectedPathId, sortedNavigationPaths],
   )
   const pathGraphMaxNodes = useMemo(
-    () => Math.max(...navigationPaths.map((path) => path.trackIds.length), 0),
-    [navigationPaths],
+    () => Math.max(...sortedNavigationPaths.map((path) => path.trackIds.length), 0),
+    [sortedNavigationPaths],
   )
   const pathGraphWidth = Math.max(460, pathGraphMaxNodes * 150)
-  const pathGraphHeight = Math.max(150, navigationPaths.length * 92 + 24)
+  const pathGraphHeight = Math.max(150, sortedNavigationPaths.length * 92 + 24)
   const formatVisibleKey = useMemo(
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
@@ -356,6 +375,34 @@ function App() {
       clampPathFinderSettings({
         ...current,
         maxTotalCost: nextValue,
+      }),
+    )
+  }
+
+  const handlePathMaxStepCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxStepCost: nextValue,
+      }),
+    )
+  }
+
+  const handlePathMaxAverageCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxAverageStepCost: nextValue,
       }),
     )
   }
@@ -785,7 +832,7 @@ function App() {
             </p>
             <p className="path-helper-copy">
               Weights define how expensive each key or tempo move is. Lower values prefer that move. The
-              search keeps only the 5 best paths under Max Total Cost and runs only when you click Find
+              search keeps only the 5 best paths under your path limits and runs only when you click Find
               Path.
             </p>
           </div>
@@ -837,6 +884,34 @@ function App() {
               onChange={(event) => handlePathMaxCostChange(event.target.value)}
             />
           </label>
+          <label>
+            Max Step Cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxStepCost}
+              onChange={(event) => handlePathMaxStepCostChange(event.target.value)}
+            />
+          </label>
+          <label>
+            Max Average Cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxAverageStepCost}
+              onChange={(event) => handlePathMaxAverageCostChange(event.target.value)}
+            />
+          </label>
+          <label>
+            Sort Paths By
+            <select value={pathSortMode} onChange={(event) => setPathSortMode(asPathSortMode(event.target.value))}>
+              {PATH_SORT_MODES.map((mode) => (
+                <option key={mode.value} value={mode.value}>
+                  {mode.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <label className="path-checkbox">
             <span>Allow Key Change by Tempo</span>
@@ -880,7 +955,7 @@ function App() {
         </div>
 
         {searchedPathSelection ? (
-          navigationPaths.length > 0 ? (
+          sortedNavigationPaths.length > 0 ? (
           <div className="path-results-grid">
             <div className="path-graph-wrapper">
               <svg
@@ -888,7 +963,7 @@ function App() {
                 viewBox={`0 0 ${pathGraphWidth} ${pathGraphHeight}`}
                 aria-label="Navigation path graph"
               >
-                {navigationPaths.map((path, pathIndex) => {
+                {sortedNavigationPaths.map((path, pathIndex) => {
                   const y = 38 + pathIndex * 92
                   const stepWidth =
                     path.trackIds.length <= 1 ? 0 : (pathGraphWidth - 120) / (path.trackIds.length - 1)
@@ -943,7 +1018,8 @@ function App() {
                         #{pathIndex + 1}
                       </text>
                       <text x={pathGraphWidth - 10} y={y + 5} textAnchor="end" className="path-graph-cost">
-                        {path.totalCost.toFixed(2)}
+                        T {path.totalCost.toFixed(2)} · A {getPathAverageCost(path).toFixed(2)} · M{' '}
+                        {getPathMaxStepCost(path).toFixed(2)}
                       </text>
                     </g>
                   )
@@ -952,14 +1028,17 @@ function App() {
             </div>
 
             <ul className="simple-list path-summary-list">
-              {navigationPaths.map((path, pathIndex) => (
+              {sortedNavigationPaths.map((path, pathIndex) => (
                 <li key={`summary:${path.id}`}>
                   <button type="button" onClick={() => setSelectedPathId(path.id)}>
                     <strong>Path #{pathIndex + 1}</strong>
                     <span>
                       {path.trackIds.length - 1} transition{path.trackIds.length - 1 === 1 ? '' : 's'}
                     </span>
-                    <em>{path.totalCost.toFixed(2)} cost</em>
+                    <em>
+                      Total {path.totalCost.toFixed(2)} · Avg {getPathAverageCost(path).toFixed(2)} · Max{' '}
+                      {getPathMaxStepCost(path).toFixed(2)}
+                    </em>
                   </button>
                 </li>
               ))}
@@ -970,6 +1049,10 @@ function App() {
                 <p className="insight-subtitle">
                   Path total: {selectedPath.totalCost.toFixed(2)} across {selectedPath.steps.length} step
                   {selectedPath.steps.length === 1 ? '' : 's'}
+                </p>
+                <p className="insight-subtitle">
+                  Path avg/max step cost: {getPathAverageCost(selectedPath).toFixed(2)} /{' '}
+                  {getPathMaxStepCost(selectedPath).toFixed(2)}
                 </p>
                 <ul className="track-list">
                   {selectedPath.steps.map((step, index) => {
@@ -1398,6 +1481,34 @@ function resolveTrackId(
   }
 
   return pathTrackLookup.has(trimmed) ? trimmed : null
+}
+
+function getPathAverageCost(path: NavigationPath): number {
+  if (path.steps.length === 0) {
+    return 0
+  }
+
+  return path.totalCost / path.steps.length
+}
+
+function getPathMaxStepCost(path: NavigationPath): number {
+  return path.steps.reduce((max, step) => Math.max(max, step.stepCost), 0)
+}
+
+function getPathSortMetric(path: NavigationPath, mode: PathSortMode): number {
+  if (mode === 'average') {
+    return getPathAverageCost(path)
+  }
+
+  if (mode === 'max') {
+    return getPathMaxStepCost(path)
+  }
+
+  return path.totalCost
+}
+
+function asPathSortMode(value: string): PathSortMode {
+  return PATH_SORT_MODES.some((mode) => mode.value === value) ? (value as PathSortMode) : 'total'
 }
 
 function asKeyRepresentation(value: string): KeyRepresentation {

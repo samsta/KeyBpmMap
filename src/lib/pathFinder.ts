@@ -23,6 +23,8 @@ export interface PathFinderSettings {
   weights: PathFinderWeights
   allowKeyChangeByTempo: boolean
   maxTotalCost: number
+  maxStepCost: number
+  maxAverageStepCost: number
 }
 
 export interface PathStep {
@@ -155,6 +157,8 @@ export const DEFAULT_PATH_FINDER_SETTINGS: PathFinderSettings = {
   weights: DEFAULT_PATH_FINDER_WEIGHTS,
   allowKeyChangeByTempo: false,
   maxTotalCost: 10,
+  maxStepCost: 4,
+  maxAverageStepCost: 3,
 }
 
 export function clampPathFinderSettings(value: PathFinderSettings): PathFinderSettings {
@@ -173,6 +177,8 @@ export function clampPathFinderSettings(value: PathFinderSettings): PathFinderSe
     },
     allowKeyChangeByTempo: Boolean(value.allowKeyChangeByTempo),
     maxTotalCost: clampWeight(value.maxTotalCost),
+    maxStepCost: clampWeight(value.maxStepCost),
+    maxAverageStepCost: clampWeight(value.maxAverageStepCost),
   }
 }
 
@@ -262,8 +268,18 @@ export function findNavigationPaths(
           continue
         }
 
+        if (transition.stepCost - settings.maxStepCost > EPSILON) {
+          continue
+        }
+
         const totalCost = current.totalCost + transition.stepCost
         if (totalCost - settings.maxTotalCost > EPSILON) {
+          continue
+        }
+
+        const stepCount = current.steps.length + 1
+        const averageCost = totalCost / stepCount
+        if (averageCost - settings.maxAverageStepCost > EPSILON) {
           continue
         }
 
