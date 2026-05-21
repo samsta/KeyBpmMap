@@ -274,7 +274,7 @@ function App() {
             <dd>
               Export your collection as XML first: open Rekordbox in Export mode, go to
               {' '}
-              <strong>File → Export Collection in xml format</strong>
+              <strong>File → Export Collection in XML format</strong>
               , save the file (e.g.{' '}
               <code>rekordbox.xml</code>
               ), then open it here.
