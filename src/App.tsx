@@ -42,6 +42,7 @@ interface OpenFilePickerConfig {
 
 type PolarKeyMode = 'both' | 'A' | 'B'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
+const APP_VERSION = __APP_VERSION__
 
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
@@ -289,6 +290,11 @@ function App() {
           <p className="label">Privacy</p>
           <strong>Browser only</strong>
           <p>No upload path, no remote API, no backend.</p>
+        </div>
+        <div>
+          <p className="label">Version</p>
+          <strong>v{APP_VERSION}</strong>
+          <p>Manually bumped in package.json for each PR.</p>
         </div>
       </section>
 
