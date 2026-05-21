@@ -176,11 +176,12 @@ function App() {
           multiple: false,
           types: [
             {
-              description: 'Engine DJ or Traktor library',
+              description: 'Engine DJ, Traktor, or Rekordbox library',
               accept: {
                 'application/vnd.sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
                 'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
-                'application/xml': ['.nml'],
+                'application/xml': ['.nml', '.xml'],
+                'text/xml': ['.xml'],
                 'application/octet-stream': ['.db', '.sqlite', '.sqlite3', '.backup'],
               },
             },
@@ -228,37 +229,57 @@ function App() {
           <p className="eyebrow">Client-only DJ library map</p>
           <h1>See where your key and BPM density actually lives.</h1>
           <p className="lede">
-            Load a local Engine DJ SQLite database or a Traktor
-            {' '}
-            <code>collection.nml</code>
-            {' '}
-            in the browser, inspect harmonic and
-            tempo hotspots, and drill into sparse areas without
-            uploading your library anywhere. Engine DJ usually stores its database at
-            {' '}
-            <code aria-label="Example macOS Engine DJ database path">
-              ~/Music/Engine Library/Database2/m.db
-            </code>
-            {' '}
-            on macOS or
-            {' '}
-            <code aria-label="Example Windows Engine DJ database path">
-              %USERPROFILE%\Music\Engine Library\Database2\m.db
-            </code>
-            {' '}
-            on Windows, while Traktor stores
-            {' '}
-            <code aria-label="Example macOS Traktor collection path">
-              ~/Documents/Native Instruments/Traktor 3/collection.nml
-            </code>
-            {' '}
-            or
-            {' '}
-            <code aria-label="Example Windows Traktor collection path">
-              %USERPROFILE%\Documents\Native Instruments\Traktor 3\collection.nml
-            </code>
-            .
+            Load your library in the browser, inspect harmonic and tempo hotspots,
+            and drill into sparse areas — without uploading your files anywhere.
           </p>
+          <dl className="platform-instructions">
+            <dt>Engine DJ</dt>
+            <dd>
+              Open the database file directly. It is usually stored at
+              {' '}
+              <code aria-label="Example macOS Engine DJ database path">
+                ~/Music/Engine Library/Database2/m.db
+              </code>
+              {' '}
+              on macOS or
+              {' '}
+              <code aria-label="Example Windows Engine DJ database path">
+                %USERPROFILE%\Music\Engine Library\Database2\m.db
+              </code>
+              {' '}
+              on Windows.
+            </dd>
+
+            <dt>Traktor</dt>
+            <dd>
+              Open your{' '}
+              <code>collection.nml</code>
+              {' '}
+              file. Traktor stores it at
+              {' '}
+              <code aria-label="Example macOS Traktor collection path">
+                ~/Documents/Native Instruments/Traktor 3/collection.nml
+              </code>
+              {' '}
+              on macOS or
+              {' '}
+              <code aria-label="Example Windows Traktor collection path">
+                %USERPROFILE%\Documents\Native Instruments\Traktor 3\collection.nml
+              </code>
+              {' '}
+              on Windows.
+            </dd>
+
+            <dt>Rekordbox</dt>
+            <dd>
+              Export your collection as XML first: open Rekordbox in Export mode, go to
+              {' '}
+              <strong>File → Export Collection in xml format</strong>
+              , save the file (e.g.{' '}
+              <code>rekordbox.xml</code>
+              ), then open it here.
+            </dd>
+          </dl>
         </div>
 
         <div className="hero-actions">
@@ -277,7 +298,7 @@ function App() {
             ref={fileInputRef}
             className="visually-hidden"
             type="file"
-            accept=".db,.sqlite,.sqlite3,.backup,.nml"
+            accept=".db,.sqlite,.sqlite3,.backup,.nml,.xml"
             onChange={handleFileChange}
           />
         </div>
@@ -285,7 +306,8 @@ function App() {
         <ul className="hero-notes">
           <li>Reads Engine DJ SQLite files locally with sql.js (WASM).</li>
           <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
-          <li>Understands Engine DJ and Traktor playlist relationships.</li>
+          <li>Reads Rekordbox XML exports locally in the browser.</li>
+          <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
           <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
         </ul>
       </section>
@@ -610,9 +632,16 @@ function getSourceDescription(library: LibraryData): string {
     return 'Demo dataset'
   }
 
-  return library.sourceName.toLowerCase().endsWith('.nml')
-    ? 'Local Traktor collection'
-    : 'Local Engine DJ database'
+  const name = library.sourceName.toLowerCase()
+  if (name.endsWith('.nml')) {
+    return 'Local Traktor collection'
+  }
+
+  if (name.endsWith('.xml')) {
+    return 'Local Rekordbox collection'
+  }
+
+  return 'Local Engine DJ database'
 }
 
 function getSparseCellStatus(cell: SparseCellSummary): string {
