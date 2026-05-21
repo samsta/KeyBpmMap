@@ -294,7 +294,6 @@ function App() {
         <div>
           <p className="label">Version</p>
           <strong>v{APP_VERSION}</strong>
-          <p>Manually bumped in package.json for each PR.</p>
         </div>
       </section>
 
