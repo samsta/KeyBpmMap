@@ -23,14 +23,14 @@ const SELECTED_STROKE_MIN = 0.5
 const SELECTED_STROKE_MAX = 2.5
 const BAND_LABEL_FONT_MIN = 4
 const BAND_LABEL_FONT_MAX = 12.5
-const BAND_LABEL_REFERENCE_RING_SIZE = 18
+const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const ringSize = (outerRadius - innerRadius) / bands.length
     const bandLabelFontSize = clampValue(
-      BAND_LABEL_FONT_MAX * (ringSize / BAND_LABEL_REFERENCE_RING_SIZE),
+      BAND_LABEL_FONT_MAX * (ringSize / BAND_LABEL_REFERENCE_RING_HEIGHT),
       BAND_LABEL_FONT_MIN,
       BAND_LABEL_FONT_MAX,
     )
