@@ -341,10 +341,14 @@ input[type='checkbox'] {
 }
 
 .path-graph-label,
-.path-graph-cost,
 .path-graph-node-label {
   fill: #cbd5e1;
   font-size: 0.78rem;
+}
+
+.path-graph-cost {
+  fill: #38bdf8;
+  font-size: 0.6rem;
 }
 
 .path-graph-track-label {
