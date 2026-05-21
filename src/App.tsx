@@ -600,7 +600,7 @@ function App() {
             aria-label="Soundcloud"
             title="Soundcloud"
           >
-            <img src="/social/soundcloud.png" alt="" aria-hidden="true" />
+            <img src="social/soundcloud.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://skonoks.bandcamp.com/"
@@ -610,7 +610,7 @@ function App() {
             aria-label="Bandcamp"
             title="Bandcamp"
           >
-            <img src="/social/bandcamp.png" alt="" aria-hidden="true" />
+            <img src="social/bandcamp.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://www.beatport.com/artist/skonoks/1160631"
@@ -620,7 +620,7 @@ function App() {
             aria-label="BeatPort"
             title="BeatPort"
           >
-            <img src="/social/beatport.png" alt="" aria-hidden="true" />
+            <img src="social/beatport.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://tidal.com/@skonoks"
@@ -630,7 +630,7 @@ function App() {
             aria-label="Tidal"
             title="Tidal"
           >
-            <img src="/social/tidal.png" alt="" aria-hidden="true" />
+            <img src="social/tidal.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://open.spotify.com/artist/1qCStUUvKfIofiPt236xhP"
@@ -640,7 +640,7 @@ function App() {
             aria-label="Spotify"
             title="Spotify"
           >
-            <img src="/social/spotify.png" alt="" aria-hidden="true" />
+            <img src="social/spotify.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://www.instagram.com/skonoks_/"
@@ -650,7 +650,7 @@ function App() {
             aria-label="Instagram"
             title="Instagram"
           >
-            <img src="/social/instagram.png" alt="" aria-hidden="true" />
+            <img src="social/instagram.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://www.facebook.com/skonoks"
@@ -660,7 +660,7 @@ function App() {
             aria-label="Facebook"
             title="Facebook"
           >
-            <img src="/social/facebook.png" alt="" aria-hidden="true" />
+            <img src="social/facebook.png" alt="" aria-hidden="true" />
           </a>
         </div>
       </section>
