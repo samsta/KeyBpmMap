@@ -178,6 +178,12 @@ select {
   padding: 24px;
 }
 
+.insight-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .chart-header {
   display: flex;
   align-items: flex-start;
@@ -334,7 +340,8 @@ select {
 
 .sparse-list {
   gap: 8px;
-  max-height: 24rem;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding-right: 6px;
 }
