@@ -269,12 +269,37 @@ input[type='checkbox'] {
 }
 
 .path-weight-grid label {
-  grid-template-rows: minmax(2.5em, auto) min-content auto;
+  grid-template-rows: minmax(2.5em, auto) min-content;
+}
+
+.path-weight-label-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .path-weight-label-text {
   display: block;
   line-height: 1.25;
+}
+
+.path-weight-tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  min-width: 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: help;
+}
+
+.path-weight-tooltip:focus-visible {
+  outline: 1px solid rgba(34, 211, 238, 0.7);
+  outline-offset: 2px;
+  border-radius: 50%;
 }
 
 .pathfinder-panel input[type='number'],
@@ -291,15 +316,8 @@ input[type='checkbox'] {
 }
 
 .path-helper-copy,
-.field-help,
 .path-status {
   color: #94a3b8;
-}
-
-.field-help {
-  font-size: 0.8rem;
-  line-height: 1.3;
-  font-weight: 500;
 }
 
 .path-actions {

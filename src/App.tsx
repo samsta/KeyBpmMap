@@ -938,25 +938,37 @@ function App() {
         </div>
 
         <div className="field-grid path-weight-grid">
-          {PATH_WEIGHT_FIELDS.map((field) => (
-            <label key={field.key}>
-              <span className="path-weight-label-text">
-                {formatWeightLabel(field.key, field.label, keyRepresentation)}
-              </span>
-              <input
-                type="number"
-                step="0.1"
-                value={pathFinderSettings.weights[field.key]}
-                onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
-              />
-              <small className="field-help">
-                {field.description}
-                {field.exampleFrom && field.exampleTo
-                  ? ` Example: ${formatVisibleKey(field.exampleFrom)} → ${formatVisibleKey(field.exampleTo)}.`
-                  : ` ${field.exampleText ?? ''}`}
-              </small>
-            </label>
-          ))}
+          {PATH_WEIGHT_FIELDS.map((field) => {
+            const helpText = `${field.description}${
+              field.exampleFrom && field.exampleTo
+                ? ` Example: ${formatVisibleKey(field.exampleFrom)} → ${formatVisibleKey(field.exampleTo)}.`
+                : ` ${field.exampleText ?? ''}`
+            }`
+
+            return (
+              <label key={field.key}>
+                <span className="path-weight-label-row">
+                  <span className="path-weight-label-text">
+                    {formatWeightLabel(field.key, field.label, keyRepresentation)}
+                  </span>
+                  <span
+                    className="path-weight-tooltip"
+                    title={helpText}
+                    aria-label={helpText}
+                    tabIndex={0}
+                  >
+                    ⓘ
+                  </span>
+                </span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={pathFinderSettings.weights[field.key]}
+                  onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
+                />
+              </label>
+            )
+          })}
         </div>
 
         {searchedPathSelection ? (
