@@ -22,7 +22,7 @@ const UNSELECTED_STROKE_MAX = 1
 const SELECTED_STROKE_MIN = 0.5
 const SELECTED_STROKE_MAX = 2.5
 const BAND_LABEL_FONT_MIN = 4
-const BAND_LABEL_FONT_MAX = 12.48
+const BAND_LABEL_FONT_MAX = 12.5
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
