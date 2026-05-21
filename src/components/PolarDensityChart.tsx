@@ -15,6 +15,8 @@ const width = 620
 const height = 620
 const outerRadius = 240
 const innerRadius = 64
+const UNSELECTED_STROKE_BASE = 12
+const SELECTED_STROKE_BASE = 30
 const UNSELECTED_STROKE_MIN = 0.1
 const UNSELECTED_STROKE_MAX = 1
 const SELECTED_STROKE_MIN = 0.5
@@ -25,12 +27,12 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const ringSize = (outerRadius - innerRadius) / bands.length
     const unselectedStrokeWidth = clampStrokeWidth(
-      12 / bands.length,
+      UNSELECTED_STROKE_BASE / bands.length,
       UNSELECTED_STROKE_MIN,
       UNSELECTED_STROKE_MAX,
     )
     const selectedStrokeWidth = clampStrokeWidth(
-      30 / bands.length,
+      SELECTED_STROKE_BASE / bands.length,
       SELECTED_STROKE_MIN,
       SELECTED_STROKE_MAX,
     )
