@@ -182,7 +182,6 @@ function App() {
                 'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
                 'application/xml': ['.nml'],
                 'application/octet-stream': ['.db', '.sqlite', '.sqlite3', '.backup'],
-                'text/xml': ['.nml'],
               },
             },
           ],
