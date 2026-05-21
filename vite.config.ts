@@ -2,9 +2,15 @@ import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const { version } = JSON.parse(
+const packageMetadata = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
-) as { version: string }
+) as { version?: unknown }
+
+if (typeof packageMetadata.version !== 'string' || packageMetadata.version.length === 0) {
+  throw new Error('package.json must define a non-empty string version')
+}
+
+const version = packageMetadata.version
 
 export default defineConfig({
   base: '/KeyBpmMap/',
