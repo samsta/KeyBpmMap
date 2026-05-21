@@ -41,13 +41,23 @@ function findTableName(tableNames: string[], target: string): string | null {
 }
 
 function getFirstValue<T>(row: SqlRow, names: string[]): T | null {
+  const valuesByNormalizedName = new Map<string, unknown>()
   for (const [key, value] of Object.entries(row)) {
-    if (names.some((name) => name.toLowerCase() === key.toLowerCase())) {
+    valuesByNormalizedName.set(normalizeColumnName(key), value)
+  }
+
+  for (const name of names) {
+    const value = valuesByNormalizedName.get(normalizeColumnName(name))
+    if (value !== undefined) {
       return value as T
     }
   }
 
   return null
+}
+
+function normalizeColumnName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
 function asId(value: unknown): string | null {
@@ -154,7 +164,9 @@ export async function loadEngineDjLibrary(file: File): Promise<LibraryData> {
           return null
         }
 
-        const bpm = asNumber(getFirstValue(row, ['bpmAnalyzed', 'bpm', 'BPM']))
+        const bpm = asNumber(
+          getFirstValue(row, ['bpmAnalyzed', 'bpm', 'BPM', 'tempo', 'tempoAnalyzed']),
+        )
         const rawKey = asNumber(getFirstValue(row, ['key', 'keyAnalyzed', 'musicalKey']))
 
         return {

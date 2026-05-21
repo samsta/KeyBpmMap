@@ -1112,7 +1112,7 @@ function App() {
                         <span>{track.title}</span>
                       </div>
                       <div className="track-meta">
-                        <span>{track.bpm ? `${track.bpm.toFixed(1)} BPM` : 'No BPM'}</span>
+                        <span>{track.bpm === null ? 'No BPM' : `${track.bpm.toFixed(1)} BPM`}</span>
                         <span>{formatVisibleKey(track.camelotKey)}</span>
                         <span>{formatRating(track)}</span>
                       </div>
