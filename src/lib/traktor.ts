@@ -142,8 +142,7 @@ function collectPlaylistNodes(
       : parentNames
 
   if (nodeType === 'PLAYLIST') {
-    const playlistName =
-      [...parentNames, nodeName ?? 'Playlist'].filter(Boolean).join(' / ') || 'Playlist'
+    const playlistName = [...parentNames, nodeName ?? 'Playlist'].filter(Boolean).join(' / ')
     const trackIds = asArray(node.PLAYLIST?.ENTRY)
       .map((playlistEntry) => asNonEmptyString(playlistEntry.PRIMARYKEY?.KEY))
       .filter((trackId): trackId is string => !!trackId && trackLookup.has(trackId))
