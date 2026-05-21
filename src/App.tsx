@@ -1018,7 +1018,7 @@ function App() {
                         #{pathIndex + 1}
                       </text>
                       <text x={pathGraphWidth - 10} y={y + 5} textAnchor="end" className="path-graph-cost">
-                        T {path.totalCost.toFixed(2)} · A {getPathAverageCost(path).toFixed(2)} · M{' '}
+                        Tot {path.totalCost.toFixed(2)} · Avg {getPathAverageCost(path).toFixed(2)} · Max{' '}
                         {getPathMaxStepCost(path).toFixed(2)}
                       </text>
                     </g>
