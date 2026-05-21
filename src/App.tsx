@@ -1060,9 +1060,17 @@ function formatPathStepSummary(
   step: NavigationPath['steps'][number],
   formatVisibleKey: (camelotKey: string) => string,
 ): string {
-  const adjustmentLabel =
-    step.adjustment === 'none' ? '' : ` · ${step.adjustment} (${step.adjustmentCost.toFixed(2)})`
-  return `${formatVisibleKey(step.fromKey)} ${step.fromBpm.toFixed(1)} → ${formatVisibleKey(step.toKey)} ${step.toBpm.toFixed(1)} BPM · ${formatPathRule(step.keyRule)} (${step.keyCost.toFixed(2)}) · tempo ${step.tempoPercentDelta.toFixed(2)}% (${step.tempoCost.toFixed(2)})${adjustmentLabel}`
+  const parts = [
+    `${formatVisibleKey(step.fromKey)} ${step.fromBpm.toFixed(1)} → ${formatVisibleKey(step.toKey)} ${step.toBpm.toFixed(1)} BPM`,
+    `${formatPathRule(step.keyRule)} (${step.keyCost.toFixed(2)})`,
+    `tempo ${step.tempoPercentDelta.toFixed(2)}% (${step.tempoCost.toFixed(2)})`,
+  ]
+
+  if (step.adjustment !== 'none') {
+    parts.push(`${step.adjustment} (${step.adjustmentCost.toFixed(2)})`)
+  }
+
+  return parts.join(' · ')
 }
 
 function formatPathRule(rule: keyof PathFinderWeights): string {

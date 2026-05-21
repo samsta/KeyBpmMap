@@ -64,6 +64,78 @@ interface CandidateState {
   totalCost: number
 }
 
+class MinCostQueue {
+  private readonly data: CandidateState[] = []
+
+  get size(): number {
+    return this.data.length
+  }
+
+  push(value: CandidateState): void {
+    this.data.push(value)
+    this.bubbleUp(this.data.length - 1)
+  }
+
+  pop(): CandidateState | undefined {
+    if (this.data.length === 0) {
+      return undefined
+    }
+
+    const top = this.data[0]
+    const tail = this.data.pop()
+    if (this.data.length > 0 && tail) {
+      this.data[0] = tail
+      this.bubbleDown(0)
+    }
+
+    return top
+  }
+
+  private bubbleUp(index: number): void {
+    let currentIndex = index
+    while (currentIndex > 0) {
+      const parentIndex = Math.floor((currentIndex - 1) / 2)
+      if (this.data[parentIndex].totalCost <= this.data[currentIndex].totalCost) {
+        break
+      }
+
+      ;[this.data[parentIndex], this.data[currentIndex]] = [this.data[currentIndex], this.data[parentIndex]]
+      currentIndex = parentIndex
+    }
+  }
+
+  private bubbleDown(index: number): void {
+    let currentIndex = index
+
+    while (true) {
+      const leftIndex = currentIndex * 2 + 1
+      const rightIndex = currentIndex * 2 + 2
+      let nextIndex = currentIndex
+
+      if (
+        leftIndex < this.data.length &&
+        this.data[leftIndex].totalCost < this.data[nextIndex].totalCost
+      ) {
+        nextIndex = leftIndex
+      }
+
+      if (
+        rightIndex < this.data.length &&
+        this.data[rightIndex].totalCost < this.data[nextIndex].totalCost
+      ) {
+        nextIndex = rightIndex
+      }
+
+      if (nextIndex === currentIndex) {
+        break
+      }
+
+      ;[this.data[currentIndex], this.data[nextIndex]] = [this.data[nextIndex], this.data[currentIndex]]
+      currentIndex = nextIndex
+    }
+  }
+}
+
 export const DEFAULT_PATH_FINDER_WEIGHTS: PathFinderWeights = {
   sameKey: 0,
   oneUp: 1,
@@ -123,19 +195,17 @@ export function findNavigationPaths(
     return []
   }
 
-  const queue: CandidateState[] = [
-    {
-      trackIds: [startTrack.id],
-      steps: [],
-      totalCost: 0,
-    },
-  ]
+  const queue = new MinCostQueue()
+  queue.push({
+    trackIds: [startTrack.id],
+    steps: [],
+    totalCost: 0,
+  })
   const results: NavigationPath[] = []
   const bestArrivalCosts = new Map<string, number[]>()
 
-  while (queue.length > 0) {
-    queue.sort((left, right) => left.totalCost - right.totalCost)
-    const current = queue.shift()
+  while (queue.size > 0) {
+    const current = queue.pop()
 
     if (!current) {
       break
