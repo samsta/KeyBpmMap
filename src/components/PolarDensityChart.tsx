@@ -7,6 +7,7 @@ interface PolarDensityChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
   keys: string[]
+  formatKeyLabel: (camelotKey: string) => string
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
@@ -26,7 +27,7 @@ const BAND_LABEL_FONT_MAX = 12.5
 const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
-  ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, formatKeyLabel, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const ringSize = (outerRadius - innerRadius) / bands.length
     const bandLabelFontSize = clampValue(
@@ -97,7 +98,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
                 className="chart-region"
                 onClick={() => onSelect(cell.id)}
               >
-                <title>{`${cell.camelotKey} / ${cell.bandLabel}: ${cell.count} track${cell.count === 1 ? '' : 's'}\n${cell.tracks
+                <title>{`${formatKeyLabel(cell.camelotKey)} / ${cell.bandLabel}: ${cell.count} track${cell.count === 1 ? '' : 's'}\n${cell.tracks
                   .slice(0, 4)
                   .map((track) => `${track.artist} — ${track.title}`)
                   .join('\n')}`}</title>
@@ -127,7 +128,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
 
             return (
               <text key={camelotKey} x={x} y={y} textAnchor="middle" className="chart-label">
-                {camelotKey}
+                {formatKeyLabel(camelotKey)}
               </text>
             )
           })}

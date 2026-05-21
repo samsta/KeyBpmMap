@@ -3,22 +3,30 @@ import { loadEngineDjLibrary } from './engineDj'
 import { loadRekordboxLibrary } from './rekordbox'
 import { loadTraktorLibrary } from './traktor'
 
-function isTraktorCollection(file: File): boolean {
-  return file.name.toLowerCase().endsWith('.nml')
-}
+export type LibraryFormat = 'engine-dj' | 'traktor' | 'rekordbox'
 
-function isRekordboxCollection(file: File): boolean {
-  return file.name.toLowerCase().endsWith('.xml')
+export function getLibraryFormatFromName(fileName: string): LibraryFormat {
+  const normalizedName = fileName.toLowerCase()
+
+  if (normalizedName.endsWith('.nml')) {
+    return 'traktor'
+  }
+
+  if (normalizedName.endsWith('.xml')) {
+    return 'rekordbox'
+  }
+
+  return 'engine-dj'
 }
 
 export function loadLibraryFromFile(file: File): Promise<LibraryData> {
-  if (isTraktorCollection(file)) {
-    return loadTraktorLibrary(file)
+  switch (getLibraryFormatFromName(file.name)) {
+    case 'traktor':
+      return loadTraktorLibrary(file)
+    case 'rekordbox':
+      return loadRekordboxLibrary(file)
+    case 'engine-dj':
+    default:
+      return loadEngineDjLibrary(file)
   }
-
-  if (isRekordboxCollection(file)) {
-    return loadRekordboxLibrary(file)
-  }
-
-  return loadEngineDjLibrary(file)
 }

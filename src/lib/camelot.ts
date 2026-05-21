@@ -52,6 +52,10 @@ const OPEN_KEY_TO_CAMELOT: Record<string, string> = {
   '12m': '7A',
 }
 
+const CAMELOT_TO_OPEN_KEY: Record<string, string> = Object.fromEntries(
+  Object.entries(OPEN_KEY_TO_CAMELOT).map(([openKey, camelotKey]) => [camelotKey, openKey]),
+)
+
 const STANDARD_KEY_TO_CAMELOT: Record<string, string> = {
   'A major': '11B',
   'A minor': '8A',
@@ -91,6 +95,33 @@ const STANDARD_KEY_TO_CAMELOT: Record<string, string> = {
   'Gb minor': '11A',
 }
 
+const CAMELOT_TO_MUSICAL_KEY: Record<string, string> = {
+  '1A': 'Ab minor',
+  '1B': 'B major',
+  '2A': 'D# minor',
+  '2B': 'F# major',
+  '3A': 'A# minor',
+  '3B': 'C# major',
+  '4A': 'F minor',
+  '4B': 'Ab major',
+  '5A': 'C minor',
+  '5B': 'D# major',
+  '6A': 'G minor',
+  '6B': 'A# major',
+  '7A': 'D minor',
+  '7B': 'F major',
+  '8A': 'A minor',
+  '8B': 'C major',
+  '9A': 'E minor',
+  '9B': 'G major',
+  '10A': 'B minor',
+  '10B': 'D major',
+  '11A': 'F# minor',
+  '11B': 'A major',
+  '12A': 'C# minor',
+  '12B': 'E major',
+ }
+
 export const CAMELOT_KEYS = Array.from({ length: 12 }, (_, index) => {
   const number = index + 1
   return [`${number}A`, `${number}B`]
@@ -98,6 +129,7 @@ export const CAMELOT_KEYS = Array.from({ length: 12 }, (_, index) => {
 
 const CAMELOT_PATTERN = /^(1[0-2]|[1-9])(A|B)$/i
 const OPEN_KEY_PATTERN = /^(1[0-2]|[1-9])(D|M)$/i
+export type KeyRepresentation = 'camelot' | 'open-key' | 'musical'
 
 function normalizeStandardKey(value: string): string | null {
   const compact = value
@@ -151,4 +183,42 @@ export function normalizeCamelotKey(value: unknown): string {
   }
 
   return '?'
+}
+
+export function camelotToOpenKey(camelotKey: string): string {
+  const normalizedCamelotKey = normalizeCamelotKey(camelotKey)
+  if (normalizedCamelotKey === '?') {
+    return '?'
+  }
+
+  return CAMELOT_TO_OPEN_KEY[normalizedCamelotKey] ?? '?'
+}
+
+export function camelotToMusicalKey(camelotKey: string): string {
+  const normalizedCamelotKey = normalizeCamelotKey(camelotKey)
+  if (normalizedCamelotKey === '?') {
+    return '?'
+  }
+
+  return CAMELOT_TO_MUSICAL_KEY[normalizedCamelotKey] ?? '?'
+}
+
+export function formatKey(
+  value: unknown,
+  representation: KeyRepresentation = 'camelot',
+): string {
+  const camelotKey = normalizeCamelotKey(value)
+  if (camelotKey === '?') {
+    return '?'
+  }
+
+  switch (representation) {
+    case 'open-key':
+      return camelotToOpenKey(camelotKey)
+    case 'musical':
+      return camelotToMusicalKey(camelotKey)
+    case 'camelot':
+    default:
+      return camelotKey
+  }
 }

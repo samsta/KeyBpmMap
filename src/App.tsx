@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import './App.css'
 import HeatmapChart from './components/HeatmapChart'
 import PolarDensityChart from './components/PolarDensityChart'
@@ -12,7 +12,7 @@ import {
   MIN_BPM_BAND_SIZE,
   summarizeTracks,
 } from './lib/analysis'
-import { CAMELOT_KEYS } from './lib/camelot'
+import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
 import { downloadSvgAsPng } from './lib/exportSvg'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
@@ -42,6 +42,8 @@ interface OpenFilePickerConfig {
 
 type PolarKeyMode = 'both' | 'A' | 'B'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
+const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
+const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
 const APP_VERSION = __APP_VERSION__
 
 function App() {
@@ -52,9 +54,20 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [bpmBandSize, setBpmBandSize] = useState(DEFAULT_BPM_BAND_SIZE)
   const [polarKeyMode, setPolarKeyMode] = useState<PolarKeyMode>('both')
+  const [keyRepresentation, setKeyRepresentation] = useState<KeyRepresentation>(
+    getInitialKeyRepresentation,
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(KEY_REPRESENTATION_STORAGE_KEY, keyRepresentation)
+    } catch {
+      // Ignore localStorage persistence errors.
+    }
+  }, [keyRepresentation])
 
   const playlistLookup = useMemo(
     () => new Map(library.playlists.map((playlist) => [playlist.id, playlist])),
@@ -77,7 +90,7 @@ function App() {
       }
 
       if (query) {
-        const haystack = `${track.artist} ${track.title} ${track.camelotKey}`.toLowerCase()
+        const haystack = `${track.artist} ${track.title} ${track.camelotKey} ${formatKey(track.camelotKey, keyRepresentation)}`.toLowerCase()
         if (!haystack.includes(query)) {
           return false
         }
@@ -97,7 +110,7 @@ function App() {
 
       return true
     })
-  }, [filters, library.tracks, playlistLookup])
+  }, [filters, keyRepresentation, library.tracks, playlistLookup])
 
   const bpmBands = useMemo(
     () => createBpmBands(filteredTracks, bpmBandSize),
@@ -125,6 +138,10 @@ function App() {
   )
   const summary = useMemo(() => summarizeTracks(filteredTracks), [filteredTracks])
   const sparseCells = useMemo(() => findSparseCells(densityCells, bpmBands), [bpmBands, densityCells])
+  const formatVisibleKey = useMemo(
+    () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
+    [keyRepresentation],
+  )
 
   const handleLoadMockData = () => {
     setLibrary(createMockLibrary())
@@ -339,6 +356,20 @@ function App() {
       <section className="panel filters-panel">
         <div className="field-grid">
           <label>
+            Key display
+            <select
+              value={keyRepresentation}
+              onChange={(event) => setKeyRepresentation(asKeyRepresentation(event.target.value))}
+            >
+              {KEY_REPRESENTATIONS.map((representation) => (
+                <option key={representation} value={representation}>
+                  {formatKeyRepresentationLabel(representation)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
             Playlist
             <select
               value={filters.playlistId}
@@ -468,6 +499,7 @@ function App() {
                 Camelot {formatKeyModeDescription(polarKeyMode)} wedges outside-in by {bpmBandSize}{' '}
                 BPM ring.
               </p>
+              <p>Showing {formatKeyRepresentationLabel(keyRepresentation).toLowerCase()} labels.</p>
             </div>
             <div className="chart-actions">
               <div className="segmented-control" role="group" aria-label="Polar key family">
@@ -496,6 +528,7 @@ function App() {
             bands={bpmBands}
             cells={visibleKeyCells}
             keys={polarKeys}
+            formatKeyLabel={formatVisibleKey}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
@@ -509,6 +542,7 @@ function App() {
                 Quick comparison of dense and empty harmonic/tempo cells for Camelot{' '}
                 {formatKeyModeDescription(polarKeyMode)} keys.
               </p>
+              <p>Showing {formatKeyRepresentationLabel(keyRepresentation).toLowerCase()} labels.</p>
             </div>
             <div className="chart-actions">
               <div className="segmented-control" role="group" aria-label="Heatmap key family">
@@ -537,6 +571,7 @@ function App() {
             bands={bpmBands}
             cells={visibleKeyCells}
             keys={polarKeys}
+            formatKeyLabel={formatVisibleKey}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
@@ -549,7 +584,7 @@ function App() {
           {selectedCell ? (
             <>
               <p className="insight-subtitle">
-                {selectedCell.camelotKey} · {selectedCell.bandLabel} · {selectedCell.count} track
+                {formatVisibleKey(selectedCell.camelotKey)} · {selectedCell.bandLabel} · {selectedCell.count} track
                 {selectedCell.count === 1 ? '' : 's'}
               </p>
               <ul className="track-list">
@@ -562,7 +597,7 @@ function App() {
                       </div>
                       <div className="track-meta">
                         <span>{track.bpm ? `${track.bpm.toFixed(1)} BPM` : 'No BPM'}</span>
-                        <span>{track.camelotKey}</span>
+                        <span>{formatVisibleKey(track.camelotKey)}</span>
                         <span>{formatRating(track)}</span>
                       </div>
                     </li>
@@ -592,14 +627,14 @@ function App() {
                   <li key={`${cell.firstCellId}:${cell.id}`}>
                     {cell.cellCount === 1 ? (
                       <button type="button" onClick={() => setSelectedCellId(cell.firstCellId)}>
-                        <strong>{cell.camelotKey}</strong>
+                        <strong>{formatVisibleKey(cell.camelotKey)}</strong>
                         <span>{cell.bandLabel}</span>
                         <em>{status}</em>
                         <small>{regionSummary}</small>
                       </button>
                     ) : (
                       <div className="sparse-summary">
-                        <strong>{cell.camelotKey}</strong>
+                        <strong>{formatVisibleKey(cell.camelotKey)}</strong>
                         <span>{cell.bandLabel}</span>
                         <em>{status}</em>
                         <small>{regionSummary}</small>
@@ -658,6 +693,36 @@ function formatKeyModeButtonLabel(mode: PolarKeyMode): string {
 
 function formatKeyModeDescription(mode: PolarKeyMode): string {
   return mode === 'both' ? 'A/B-side' : `${mode}-side`
+}
+
+function formatKeyRepresentationLabel(representation: KeyRepresentation): string {
+  switch (representation) {
+    case 'open-key':
+      return 'Open Key'
+    case 'musical':
+      return 'Musical'
+    case 'camelot':
+    default:
+      return 'Camelot'
+  }
+}
+
+function asKeyRepresentation(value: string): KeyRepresentation {
+  return KEY_REPRESENTATIONS.includes(value as KeyRepresentation)
+    ? (value as KeyRepresentation)
+    : 'camelot'
+}
+
+function getInitialKeyRepresentation(): KeyRepresentation {
+  if (typeof window === 'undefined') {
+    return 'camelot'
+  }
+
+  try {
+    return asKeyRepresentation(window.localStorage.getItem(KEY_REPRESENTATION_STORAGE_KEY) ?? '')
+  } catch {
+    return 'camelot'
+  }
 }
 
 export default App

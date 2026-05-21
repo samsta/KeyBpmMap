@@ -7,6 +7,7 @@ interface HeatmapChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
   keys: string[]
+  formatKeyLabel: (camelotKey: string) => string
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
@@ -17,7 +18,7 @@ const BAND_HEIGHT_PX = 18
 const MIN_HEIGHT_PX = 420
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
-  ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, formatKeyLabel, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const height = Math.max(
       MIN_HEIGHT_PX,
@@ -73,7 +74,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
               className="chart-region"
               onClick={() => onSelect(cell.id)}
             >
-              <title>{`${cell.camelotKey} / ${cell.bandLabel}: ${cell.count} track${cell.count === 1 ? '' : 's'}\n${cell.tracks
+              <title>{`${formatKeyLabel(cell.camelotKey)} / ${cell.bandLabel}: ${cell.count} track${cell.count === 1 ? '' : 's'}\n${cell.tracks
                 .slice(0, 4)
                 .map((track) => `${track.artist} — ${track.title}`)
                 .join('\n')}`}</title>
@@ -91,7 +92,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
               textAnchor="middle"
               className="chart-label"
             >
-              {camelotKey}
+              {formatKeyLabel(camelotKey)}
             </text>
           )
         })}
