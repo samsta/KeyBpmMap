@@ -86,13 +86,13 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
           const x = xScale(index + 0.5)
           const label = formatKeyLabel(camelotKey)
           const rotateLabel = label.length > 3
-          const labelY = height - margin.bottom + (rotateLabel ? 18 : 28)
+          const labelY = height - margin.bottom + (rotateLabel ? 13 : 28)
           return (
             <text
               key={camelotKey}
               x={x}
               y={labelY}
-              textAnchor={rotateLabel ? 'end' : 'middle'}
+              textAnchor={rotateLabel ? 'beginning' : 'middle'}
               className="chart-label"
               transform={rotateLabel ? `rotate(90 ${x} ${labelY})` : undefined}
             >
