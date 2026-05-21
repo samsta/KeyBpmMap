@@ -261,6 +261,7 @@ input[type='checkbox'] {
 .pathfinder-panel {
   display: grid;
   gap: 16px;
+  order: 999;
 }
 
 .path-weight-grid {
@@ -272,6 +273,25 @@ input[type='checkbox'] {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.path-helper-copy,
+.field-help,
+.path-status {
+  color: #94a3b8;
+}
+
+.field-help {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.path-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .path-results-grid {
@@ -400,6 +420,17 @@ input[type='checkbox'] {
   border-radius: 999px;
   padding: 0.28rem 0.65rem;
   font-style: normal;
+}
+
+.track-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.track-action-button {
+  padding: 0.45rem 0.8rem;
+  font-size: 0.82rem;
 }
 
 .simple-list button {

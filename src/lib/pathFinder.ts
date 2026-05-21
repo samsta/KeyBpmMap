@@ -4,6 +4,7 @@ const EPSILON = 1e-9
 const SPEED_UP_FACTOR = 1.05946
 const SLOW_DOWN_FACTOR = 0.9439
 const MAX_PATH_RESULTS = 5
+const MAX_EXPLORED_STATES = 50_000
 
 export interface PathFinderWeights {
   sameKey: number
@@ -12,6 +13,7 @@ export interface PathFinderWeights {
   aToB: number
   bToA: number
   energyBoost: number
+  energyDrop: number
   centerJump: number
   tempoPercent: number
   keyChangeByTempo: number
@@ -143,6 +145,7 @@ export const DEFAULT_PATH_FINDER_WEIGHTS: PathFinderWeights = {
   aToB: 2,
   bToA: 2,
   energyBoost: 1,
+  energyDrop: 1,
   centerJump: 4,
   tempoPercent: 1,
   keyChangeByTempo: 3,
@@ -163,6 +166,7 @@ export function clampPathFinderSettings(value: PathFinderSettings): PathFinderSe
       aToB: clampWeight(value.weights.aToB),
       bToA: clampWeight(value.weights.bToA),
       energyBoost: clampWeight(value.weights.energyBoost),
+      energyDrop: clampWeight(value.weights.energyDrop),
       centerJump: clampWeight(value.weights.centerJump),
       tempoPercent: clampWeight(value.weights.tempoPercent),
       keyChangeByTempo: clampWeight(value.weights.keyChangeByTempo),
@@ -203,11 +207,17 @@ export function findNavigationPaths(
   })
   const results: NavigationPath[] = []
   const bestArrivalCosts = new Map<string, number[]>()
+  let exploredStates = 0
 
   while (queue.size > 0) {
     const current = queue.pop()
 
     if (!current) {
+      break
+    }
+
+    exploredStates += 1
+    if (exploredStates > MAX_EXPLORED_STATES) {
       break
     }
 
@@ -390,6 +400,10 @@ function getKeyTransitionCost(
 
   if (from.mode === 'A' && to.mode === 'B' && upOffset === 3) {
     return { rule: 'energyBoost', cost: weights.energyBoost }
+  }
+
+  if (from.mode === 'B' && to.mode === 'A' && upOffset === 9) {
+    return { rule: 'energyDrop', cost: weights.energyDrop }
   }
 
   if (from.mode === to.mode && upOffset === 6) {

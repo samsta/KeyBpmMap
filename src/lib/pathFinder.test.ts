@@ -92,6 +92,22 @@ describe('findNavigationPaths', () => {
     expect(enabled[0]?.totalCost).toBeLessThan(4)
   })
 
+  it('supports xB to (x-3)A transitions', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8B', 120),
+      makeTrack('end', '5A', 120),
+    ]
+
+    const paths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 10,
+    })
+
+    expect(paths).toHaveLength(1)
+    expect(paths[0]?.steps[0]?.keyRule).toBe('energyDrop')
+    expect(paths[0]?.totalCost).toBe(1)
+  })
+
   it('returns no paths when either endpoint is missing', () => {
     const tracks: TrackRecord[] = [makeTrack('start', '8A', 120)]
     const settings: PathFinderSettings = { ...DEFAULT_PATH_FINDER_SETTINGS }
