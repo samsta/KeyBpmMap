@@ -1,12 +1,13 @@
 # KeyBpmMap
 
-KeyBpmMap is a client-only React application for exploring the harmonic and tempo shape of an Engine DJ music library.
-It reads a local SQLite database in the browser with `sql.js`, converts Engine numeric keys into Camelot notation, and renders both a polar density map and a BPM-vs-key heatmap for fast DJ library analysis.
+KeyBpmMap is a client-only React application for exploring the harmonic and tempo shape of a DJ music library.
+It reads local Engine DJ SQLite databases and Traktor `collection.nml` files directly in the browser, normalizes supported key formats into Camelot notation, and renders both a polar density map and a BPM-vs-key heatmap for fast library analysis.
 
 ## Features
 
 - Browser-only Engine DJ database loading (`Track`, `Playlist`, `PlaylistEntity`)
-- Engine numeric key → Camelot conversion (`0=8B ... 23=7A`)
+- Browser-only Traktor `collection.nml` loading, including playlist metadata
+- Engine numeric, Open Key, and standard musical key → Camelot conversion
 - Polar harmonic density map and rectangular BPM heatmap
 - Playlist, rating, BPM, and text filters
 - Region inspection for exact track lists inside a selected cell
@@ -25,13 +26,18 @@ npm run dev
 
 Open the Vite dev server URL in your browser, then either:
 
-1. Load a local Engine DJ SQLite database file (`.db`, `.sqlite`, `.sqlite3`, `.backup`), or
+1. Load a local Engine DJ SQLite database file (`.db`, `.sqlite`, `.sqlite3`, `.backup`) or a Traktor `collection.nml`, or
 2. Use the built-in mock crate to explore the interface without a real library.
 
 Typical Engine DJ database locations:
 
 - macOS: `~/Music/Engine Library/Database2/m.db`
 - Windows: `%USERPROFILE%\Music\Engine Library\Database2\m.db`
+
+Typical Traktor collection locations:
+
+- macOS: `~/Documents/Native Instruments/Traktor [version]/collection.nml`
+- Windows: `%USERPROFILE%\Documents\Native Instruments\Traktor [version]\collection.nml`
 
 ## Verifying a local checkout
 
@@ -73,5 +79,6 @@ With this single-site GitHub Pages setup, the custom Actions workflow still publ
 ## Notes
 
 - Processing happens locally in the browser; there is no upload endpoint or server component.
-- The parser is intentionally tolerant of minor schema variations by matching common column names case-insensitively.
-- If a database is missing the `Track` table, the app shows a validation error instead of failing silently.
+- The Engine DJ parser is intentionally tolerant of minor schema variations by matching common column names case-insensitively.
+- Traktor playlists are reconstructed from `PLAYLISTS` / `PRIMARYKEY` references in the `collection.nml`.
+- If an Engine DJ database is missing the `Track` table, or a Traktor collection has no `COLLECTION` entries, the app shows a validation error instead of failing silently.
