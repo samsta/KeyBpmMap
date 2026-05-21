@@ -974,12 +974,24 @@ function App() {
                     .map((_, index) => `${60 + index * stepWidth},${y}`)
                     .join(' ')
                   const isSelected = selectedPath?.id === path.id
+                  const pathAriaLabel = `Select navigation path ${pathIndex + 1}. Total cost ${path.totalCost.toFixed(2)}. Average cost ${getPathAverageCost(path).toFixed(2)}. Maximum step cost ${getPathMaxStepCost(path).toFixed(2)}.`
 
                   return (
                     <g
                       key={path.id}
                       className={isSelected ? 'path-graph-row is-selected' : 'path-graph-row'}
+                      role="button"
+                      tabIndex={0}
+                      focusable="true"
+                      aria-label={pathAriaLabel}
+                      aria-pressed={isSelected}
                       onClick={() => setSelectedPathId(path.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedPathId(path.id)
+                        }
+                      }}
                     >
                       <polyline points={points} />
                       {path.trackIds.map((trackId, nodeIndex) => {
