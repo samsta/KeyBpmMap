@@ -937,6 +937,7 @@ function App() {
           {pathSearchStatus ? <p className="path-status">{pathSearchStatus}</p> : null}
         </div>
 
+        <h4 className="path-section-heading">Transition costs</h4>
         <div className="field-grid path-weight-grid">
           {PATH_WEIGHT_FIELDS.map((field) => {
             const helpText = `${field.description}${
