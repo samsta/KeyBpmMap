@@ -65,8 +65,20 @@ const PATH_WEIGHT_FIELDS: Array<{
   { key: 'sameKey', label: 'Same Key', description: 'Keep the same harmonic slot.', exampleFrom: '8A', exampleTo: '8A' },
   { key: 'oneUp', label: 'One Up', description: 'Move clockwise by one on the wheel.', exampleFrom: '5A', exampleTo: '6A' },
   { key: 'oneDown', label: 'One Down', description: 'Move counter-clockwise by one on the wheel.', exampleFrom: '6A', exampleTo: '5A' },
-  { key: 'aToB', label: 'A → B', description: 'Switch from minor to major at the same number.', exampleFrom: '8A', exampleTo: '8B' },
-  { key: 'bToA', label: 'B → A', description: 'Switch from major to minor at the same number.', exampleFrom: '8B', exampleTo: '8A' },
+  {
+    key: 'aToB',
+    label: 'A → B',
+    description: 'Jump from the inner ring to the outer ring, or from a minor key to its relative major.',
+    exampleFrom: '8A',
+    exampleTo: '8B',
+  },
+  {
+    key: 'bToA',
+    label: 'B → A',
+    description: 'Jump from the outer ring to the inner ring, or from a major key to its relative minor.',
+    exampleFrom: '8B',
+    exampleTo: '8A',
+  },
   { key: 'energyBoost', label: 'xA → (x+3)B', description: 'Minor to major energy lift.', exampleFrom: '5A', exampleTo: '8B' },
   { key: 'energyDrop', label: 'xB → (x-3)A', description: 'Major to minor inverse of the energy lift.', exampleFrom: '8B', exampleTo: '5A' },
   { key: 'centerJump', label: 'Center Jump', description: 'Jump across the wheel center.', exampleFrom: '5A', exampleTo: '11A' },
@@ -109,6 +121,7 @@ function App() {
   } | null>(null)
   const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
+  const [showScopeTrackTable, setShowScopeTrackTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
@@ -230,15 +243,6 @@ function App() {
     () => new Map(pathTrackOptions.map((option) => [option.id, option.label])),
     [pathTrackOptions],
   )
-  const resolvedPathSelection = useMemo(() => {
-    const defaultStart = pathTrackOptions[0]?.label ?? ''
-    const defaultEnd = pathTrackOptions.find((option) => option.label !== defaultStart)?.label ?? defaultStart
-
-    return {
-      startTrack: pathSelection.startTrack || defaultStart,
-      endTrack: pathSelection.endTrack || defaultEnd,
-    }
-  }, [pathSelection.endTrack, pathSelection.startTrack, pathTrackOptions])
   const pathTrackLookup = useMemo(
     () => new Map(pathScopeTracks.map((track) => [track.id, track])),
     [pathScopeTracks],
@@ -281,7 +285,7 @@ function App() {
     [navigationPaths],
   )
   const pathGraphWidth = Math.max(460, pathGraphMaxNodes * 150)
-  const pathGraphHeight = Math.max(130, navigationPaths.length * 76 + 24)
+  const pathGraphHeight = Math.max(150, navigationPaths.length * 92 + 24)
   const formatVisibleKey = useMemo(
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
@@ -366,8 +370,8 @@ function App() {
   }
 
   const handleFindPath = () => {
-    const startTrackId = resolveTrackId(resolvedPathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
-    const endTrackId = resolveTrackId(resolvedPathSelection.endTrack, pathTrackIdByLabel, pathTrackLookup)
+    const startTrackId = resolveTrackId(pathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
+    const endTrackId = resolveTrackId(pathSelection.endTrack, pathTrackIdByLabel, pathTrackLookup)
 
     if (!startTrackId || !endTrackId) {
       setPathSearchStatus('Select valid Start Track and End Track values from the list.')
@@ -699,6 +703,77 @@ function App() {
         </article>
       </section>
 
+      <section className="panel insight-panel">
+        <div className="chart-header">
+          <div>
+            <h2>Tracks in Scope</h2>
+            <p>
+              Use this optional table to diagnose why tracks might be missing from plots. Tracks without BPM
+              are never plotted, and keys outside the current key-family filter are hidden.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setShowScopeTrackTable((current) => !current)}
+          >
+            {showScopeTrackTable ? 'Hide Track Table' : 'Show Track Table'}
+          </button>
+        </div>
+        {showScopeTrackTable ? (
+          <div className="scope-track-table-wrapper">
+            <table className="scope-track-table">
+              <thead>
+                <tr>
+                  <th>Artist</th>
+                  <th>Title</th>
+                  <th>BPM</th>
+                  <th>Key</th>
+                  <th>In Plots</th>
+                  <th>Path</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pathScopeTracks.map((track) => {
+                  const isInPlots = track.bpm !== null && polarKeySet.has(track.camelotKey)
+                  return (
+                    <tr key={`scope-track:${track.id}`}>
+                      <td>{track.artist}</td>
+                      <td>{track.title}</td>
+                      <td>{track.bpm === null ? 'No BPM' : track.bpm.toFixed(1)}</td>
+                      <td>{formatVisibleKey(track.camelotKey)}</td>
+                      <td>
+                        {isInPlots
+                          ? 'Yes'
+                          : (track.bpm === null ? 'No (missing BPM)' : 'No (hidden by key filter)')}
+                      </td>
+                      <td>
+                        <div className="track-actions">
+                          <button
+                            type="button"
+                            className="secondary-button track-action-button"
+                            onClick={() => handleSetPathTrack('startTrack', track.id)}
+                          >
+                            Start
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary-button track-action-button"
+                            onClick={() => handleSetPathTrack('endTrack', track.id)}
+                          >
+                            End
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
       <section className="panel pathfinder-panel">
         <div className="chart-header">
           <div>
@@ -720,7 +795,7 @@ function App() {
             <input
               type="search"
               list="path-start-track-options"
-              value={resolvedPathSelection.startTrack}
+              value={pathSelection.startTrack}
               placeholder="Type to filter tracks"
               onChange={(event) =>
                 setPathSelection((current) => ({ ...current, startTrack: event.target.value }))
@@ -738,7 +813,7 @@ function App() {
             <input
               type="search"
               list="path-end-track-options"
-              value={resolvedPathSelection.endTrack}
+              value={pathSelection.endTrack}
               placeholder="Type to filter tracks"
               onChange={(event) =>
                 setPathSelection((current) => ({ ...current, endTrack: event.target.value }))
@@ -812,7 +887,7 @@ function App() {
                 aria-label="Navigation path graph"
               >
                 {navigationPaths.map((path, pathIndex) => {
-                  const y = 40 + pathIndex * 70
+                  const y = 38 + pathIndex * 92
                   const stepWidth =
                     path.trackIds.length <= 1 ? 0 : (pathGraphWidth - 120) / (path.trackIds.length - 1)
                   const points = path.trackIds
@@ -827,19 +902,35 @@ function App() {
                       onClick={() => setSelectedPathId(path.id)}
                     >
                       <polyline points={points} />
-                      {path.trackIds.map((trackId, nodeIndex) => (
-                        <g key={`${path.id}:${trackId}`}>
-                          <circle cx={60 + nodeIndex * stepWidth} cy={y} r={12} />
+                      {path.trackIds.map((trackId, nodeIndex) => {
+                        const track = pathTrackLookup.get(trackId)
+                        const x = 60 + nodeIndex * stepWidth
+
+                        return (
+                        <g key={`${path.id}:${trackId}:${nodeIndex}`}>
+                          <circle cx={x} cy={y} r={12} />
                           <text
-                            x={60 + nodeIndex * stepWidth}
+                            x={x}
                             y={y + 5}
                             textAnchor="middle"
                             className="path-graph-node-label"
                           >
                             {nodeIndex + 1}
                           </text>
+                          {track ? (
+                            <text
+                              x={x}
+                              y={y + 26}
+                              textAnchor="middle"
+                              className="path-graph-track-label"
+                            >
+                              <tspan x={x} dy="0" className="path-graph-track-artist">{track.artist}</tspan>
+                              <tspan x={x} dy="1.1em">{track.title}</tspan>
+                            </text>
+                          ) : null}
                         </g>
-                      ))}
+                        )
+                      })}
                       <text x={10} y={y + 5} className="path-graph-label">
                         #{pathIndex + 1}
                       </text>
@@ -1191,6 +1282,25 @@ function formatWeightLabel(
   fallbackLabel: string,
   keyRepresentation: KeyRepresentation,
 ): string {
+  if (keyRepresentation === 'musical') {
+    switch (weight) {
+      case 'oneUp':
+        return 'One 5th up'
+      case 'oneDown':
+        return 'One 5th down'
+      case 'aToB':
+        return 'min → rel maj'
+      case 'bToA':
+        return 'maj → rel min'
+      case 'energyBoost':
+        return 'min → maj'
+      case 'energyDrop':
+        return 'maj → min'
+      default:
+        return fallbackLabel
+    }
+  }
+
   const minorLabel = getRepresentationMinorLabel(keyRepresentation)
   const majorLabel = getRepresentationMajorLabel(keyRepresentation)
 
