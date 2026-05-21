@@ -13,8 +13,8 @@ import {
   summarizeTracks,
 } from './lib/analysis'
 import { CAMELOT_KEYS } from './lib/camelot'
-import { loadEngineDjLibrary } from './lib/engineDj'
 import { downloadSvgAsPng } from './lib/exportSvg'
+import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
 import type { LibraryData, SparseCellSummary, TrackRecord } from './types'
 
@@ -143,7 +143,7 @@ function App() {
     setError(null)
 
     try {
-      const nextLibrary = await loadEngineDjLibrary(file)
+      const nextLibrary = await loadLibraryFromFile(file)
       setLibrary(nextLibrary)
       setSelectedCellId(null)
       setFilters(initialFilters)
@@ -152,7 +152,7 @@ function App() {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : 'The selected database could not be parsed.',
+          : 'The selected library file could not be parsed.',
       )
     } finally {
       setLoading(false)
@@ -174,14 +174,15 @@ function App() {
         const [fileHandle] = await pickerWindow.showOpenFilePicker({
           id: 'engine-dj-database',
           multiple: false,
-          startIn: 'music',
           types: [
             {
-              description: 'Engine DJ database',
+              description: 'Engine DJ or Traktor library',
               accept: {
                 'application/vnd.sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
                 'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3', '.backup'],
+                'application/xml': ['.nml'],
                 'application/octet-stream': ['.db', '.sqlite', '.sqlite3', '.backup'],
+                'text/xml': ['.nml'],
               },
             },
           ],
@@ -228,9 +229,13 @@ function App() {
           <p className="eyebrow">Client-only Engine DJ map</p>
           <h1>See where your key and BPM density actually lives.</h1>
           <p className="lede">
-            Load a local Engine DJ SQLite database in the browser, inspect harmonic and
+            Load a local Engine DJ SQLite database or a Traktor
+            {' '}
+            <code>collection.nml</code>
+            {' '}
+            in the browser, inspect harmonic and
             tempo hotspots, and drill into sparse areas without
-            uploading your library anywhere. Engine DJ usually stores it at
+            uploading your library anywhere. Engine DJ usually stores its database at
             {' '}
             <code aria-label="Example macOS Engine DJ database path">
               ~/Music/Engine Library/Database2/m.db
@@ -242,7 +247,18 @@ function App() {
               %USERPROFILE%\Music\Engine Library\Database2\m.db
             </code>
             {' '}
-            on Windows.
+            on Windows, while Traktor stores
+            {' '}
+            <code aria-label="Example macOS Traktor collection path">
+              ~/Documents/Native Instruments/Traktor [version]/collection.nml
+            </code>
+            {' '}
+            or
+            {' '}
+            <code aria-label="Example Windows Traktor collection path">
+              %USERPROFILE%\Documents\Native Instruments\Traktor [version]\collection.nml
+            </code>
+            .
           </p>
         </div>
 
@@ -253,7 +269,7 @@ function App() {
             onClick={handleOpenDatabase}
             disabled={loading}
           >
-            {loading ? 'Loading database…' : 'Load Engine DJ database'}
+            {loading ? 'Loading library…' : 'Load library file'}
           </button>
           <button type="button" className="secondary-button" onClick={handleLoadMockData}>
             Use mock crate
@@ -262,15 +278,15 @@ function App() {
             ref={fileInputRef}
             className="visually-hidden"
             type="file"
-            accept=".db,.sqlite,.sqlite3,.backup"
+            accept=".db,.sqlite,.sqlite3,.backup,.nml"
             onChange={handleFileChange}
           />
         </div>
 
         <ul className="hero-notes">
-          <li>Reads SQLite locally with sql.js (WASM).</li>
-          <li>On supported browsers, the picker starts in your Music folder.</li>
-          <li>Understands Track / Playlist / PlaylistEntity relationships.</li>
+          <li>Reads Engine DJ SQLite files locally with sql.js (WASM).</li>
+          <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
+          <li>Understands Engine DJ and Traktor playlist relationships.</li>
           <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
         </ul>
       </section>
@@ -279,7 +295,7 @@ function App() {
         <div>
           <p className="label">Current source</p>
           <strong>{library.sourceName}</strong>
-          <p>{library.source === 'mock' ? 'Demo dataset' : 'Local SQLite database'}</p>
+          <p>{getSourceDescription(library)}</p>
         </div>
         <div>
           <p className="label">Playlist scope</p>
@@ -588,6 +604,16 @@ function formatRating(track: TrackRecord): string {
   }
 
   return `${track.rating.toFixed(1)}★`
+}
+
+function getSourceDescription(library: LibraryData): string {
+  if (library.source === 'mock') {
+    return 'Demo dataset'
+  }
+
+  return library.sourceName.toLowerCase().endsWith('.nml')
+    ? 'Local Traktor collection'
+    : 'Local Engine DJ database'
 }
 
 function getSparseCellStatus(cell: SparseCellSummary): string {
