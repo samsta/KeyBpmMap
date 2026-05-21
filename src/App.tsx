@@ -52,9 +52,9 @@ type PolarKeyMode = 'both' | 'A' | 'B'
 type PathSortMode = 'total' | 'average' | 'max'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
 const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
-  { value: 'total', label: 'Total Cost' },
-  { value: 'average', label: 'Average Step Cost' },
-  { value: 'max', label: 'Max Step Cost' },
+  { value: 'total', label: 'Total Weight' },
+  { value: 'average', label: 'Average Transition Weight' },
+  { value: 'max', label: 'Max Transition Weight' },
 ]
 const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
 const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
@@ -91,13 +91,13 @@ const PATH_WEIGHT_FIELDS: Array<{
   {
     key: 'tempoPercent',
     label: 'Tempo Per %',
-    description: 'Cost per tempo percent difference.',
+    description: 'Weight per tempo percent difference.',
     exampleText: 'Example: 120.0 BPM → 121.2 BPM is 1%.',
   },
   {
     key: 'keyChangeByTempo',
     label: 'Tempo Key Change',
-    description: 'Cost to shift key by tempo before evaluating transitions.',
+    description: 'Weight to shift key by tempo before evaluating transitions.',
     exampleText: 'Example: 8A at 120 BPM +5.946% → 3A at 127.1 BPM.',
   },
 ]
@@ -831,7 +831,7 @@ function App() {
           <div>
             <h2>Path Finder</h2>
             <p>
-              Set transition costs to guide route quality between tracks.
+              Set transition weights to guide route quality between tracks.
             </p>
             <p className="path-helper-copy">
               Weights define how expensive each key or tempo move is. Lower values prefer that move. The
@@ -879,7 +879,7 @@ function App() {
           </datalist>
 
           <label>
-            Max Total Cost
+            Max Total Weight
             <input
               type="number"
               step="0.1"
@@ -888,7 +888,7 @@ function App() {
             />
           </label>
           <label>
-            Max Step Cost
+            Max Transition Weight
             <input
               type="number"
               step="0.1"
@@ -897,7 +897,7 @@ function App() {
             />
           </label>
           <label>
-            Max Average Cost
+            Max Average Weight
             <input
               type="number"
               step="0.1"
@@ -937,7 +937,7 @@ function App() {
           {pathSearchStatus ? <p className="path-status">{pathSearchStatus}</p> : null}
         </div>
 
-        <h4 className="path-section-heading">Transition costs</h4>
+        <h4 className="path-section-heading">Transition weights</h4>
         <div className="field-grid path-weight-grid">
           {PATH_WEIGHT_FIELDS.map((field) => {
             const helpText = `${field.description}${
@@ -989,7 +989,7 @@ function App() {
                     .map((_, index) => `${60 + index * stepWidth},${y}`)
                     .join(' ')
                   const isSelected = selectedPath?.id === path.id
-                  const pathAriaLabel = `Select navigation path ${pathIndex + 1}. Total cost ${path.totalCost.toFixed(2)}. Average cost ${getPathAverageCost(path).toFixed(2)}. Maximum step cost ${getPathMaxStepCost(path).toFixed(2)}.`
+                  const pathAriaLabel = `Select navigation path ${pathIndex + 1}. Total weight ${path.totalCost.toFixed(2)}. Average weight ${getPathAverageCost(path).toFixed(2)}. Maximum transition weight ${getPathMaxStepCost(path).toFixed(2)}.`
 
                   return (
                     <g
@@ -1077,11 +1077,11 @@ function App() {
             {selectedPath ? (
               <div className="path-details">
                 <p className="insight-subtitle">
-                  Path total: {selectedPath.totalCost.toFixed(2)} across {selectedPath.steps.length} step
+                  Path total: {selectedPath.totalCost.toFixed(2)} across {selectedPath.steps.length} transition
                   {selectedPath.steps.length === 1 ? '' : 's'}
                 </p>
                 <p className="insight-subtitle">
-                  Path avg/max step cost: {getPathAverageCost(selectedPath).toFixed(2)} /{' '}
+                  Path avg/max transition weight: {getPathAverageCost(selectedPath).toFixed(2)} /{' '}
                   {getPathMaxStepCost(selectedPath).toFixed(2)}
                 </p>
                 <ul className="track-list">
@@ -1091,7 +1091,7 @@ function App() {
                     return (
                       <li key={`${selectedPath.id}:${step.fromTrackId}:${step.toTrackId}:${index}`}>
                         <div className="track-title">
-                          <strong>Step {index + 1}</strong>
+                          <strong>Transition {index + 1}</strong>
                           <span>
                             {fromTrack ? formatTrackLabel(fromTrack) : step.fromTrackId} →{' '}
                             {toTrack ? formatTrackLabel(toTrack) : step.toTrackId}
@@ -1099,7 +1099,7 @@ function App() {
                         </div>
                         <div className="track-meta">
                           <span>{formatPathStepSummary(step, formatVisibleKey)}</span>
-                          <span>{step.stepCost.toFixed(2)} cost</span>
+                          <span>{step.stepCost.toFixed(2)} weight</span>
                         </div>
                       </li>
                     )
@@ -1110,7 +1110,7 @@ function App() {
           </div>
           ) : (
           <p className="placeholder-text">
-            No path found for the selected tracks and max total cost. Increase Max Total Cost or adjust
+            No path found for the selected tracks and max total weight. Increase Max Total Weight or adjust
             weights, then click Find Path again.
           </p>
           )
