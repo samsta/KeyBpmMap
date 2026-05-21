@@ -41,13 +41,13 @@ function findTableName(tableNames: string[], target: string): string | null {
 }
 
 function getFirstValue<T>(row: SqlRow, names: string[]): T | null {
-  const valuesByNormalizedName = new Map<string, unknown>()
+  const normalizedValues = new Map<string, unknown>()
   for (const [key, value] of Object.entries(row)) {
-    valuesByNormalizedName.set(normalizeColumnName(key), value)
+    normalizedValues.set(normalizeColumnName(key), value)
   }
 
   for (const name of names) {
-    const value = valuesByNormalizedName.get(normalizeColumnName(name))
+    const value = normalizedValues.get(normalizeColumnName(name))
     if (value !== undefined) {
       return value as T
     }
