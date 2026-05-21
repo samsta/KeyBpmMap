@@ -1,12 +1,12 @@
 import { scaleLinear, scaleSequential } from 'd3'
 import { interpolateTurbo } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
-import { CAMELOT_KEYS } from '../lib/camelot'
 import type { BpmBand, DensityCell } from '../types'
 
 interface HeatmapChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
+  keys: string[]
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
@@ -17,7 +17,7 @@ const BAND_HEIGHT_PX = 18
 const MIN_HEIGHT_PX = 420
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
-  ({ bands, cells, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const height = Math.max(
       MIN_HEIGHT_PX,
@@ -30,9 +30,9 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
     const xScale = useMemo(
       () =>
         scaleLinear()
-          .domain([0, CAMELOT_KEYS.length])
+          .domain([0, keys.length])
           .range([margin.left, width - margin.right]),
-      [],
+      [keys.length],
     )
     const yScale = useMemo(
       () =>
@@ -53,7 +53,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
         <rect width={width} height={height} fill="#080b14" rx="20" />
 
         {cells.map((cell) => {
-          const keyIndex = CAMELOT_KEYS.indexOf(cell.camelotKey)
+          const keyIndex = keys.indexOf(cell.camelotKey)
           const x = xScale(keyIndex)
           const y = yScale(cell.bandIndex)
           const cellWidth = xScale(keyIndex + 1) - xScale(keyIndex) - 2
@@ -81,7 +81,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
           )
         })}
 
-        {CAMELOT_KEYS.map((camelotKey, index) => {
+        {keys.map((camelotKey, index) => {
           const x = xScale(index + 0.5)
           return (
             <text

@@ -140,6 +140,10 @@ function App() {
     () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
     [densityCells, polarKeySet],
   )
+  const heatmapCells = useMemo(
+    () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
+    [densityCells, polarKeySet],
+  )
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
     [densityCells, selectedCellId],
@@ -487,20 +491,41 @@ function App() {
           <div className="chart-header">
             <div>
               <h2>BPM versus key heatmap</h2>
-              <p>Quick comparison of dense and empty harmonic/tempo cells.</p>
+              <p>
+                Quick comparison of dense and empty harmonic/tempo cells for Camelot{' '}
+                {polarKeyMode === 'both' ? 'A/B' : `${polarKeyMode}-side`} keys.
+              </p>
             </div>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.png')}
-            >
-              Export PNG
-            </button>
+            <div className="chart-actions">
+              <div className="segmented-control" role="group" aria-label="Heatmap key family">
+                {POLAR_KEY_MODES.map((mode) => (
+                  <button
+                    key={`heatmap-${mode}`}
+                    type="button"
+                    className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
+                    onClick={() => {
+                      setPolarKeyMode(mode)
+                      setSelectedCellId(null)
+                    }}
+                  >
+                    {mode === 'both' ? 'A + B' : `${mode} only`}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.png')}
+              >
+                Export PNG
+              </button>
+            </div>
           </div>
           <HeatmapChart
             ref={heatmapRef}
             bands={bpmBands}
-            cells={densityCells}
+            cells={heatmapCells}
+            keys={polarKeys}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />

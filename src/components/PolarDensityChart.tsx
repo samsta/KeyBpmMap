@@ -15,10 +15,25 @@ const width = 620
 const height = 620
 const outerRadius = 240
 const innerRadius = 64
+const UNSELECTED_STROKE_MIN = 0.1
+const UNSELECTED_STROKE_MAX = 1
+const SELECTED_STROKE_MIN = 0.5
+const SELECTED_STROKE_MAX = 2.5
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
+    const ringSize = (outerRadius - innerRadius) / bands.length
+    const unselectedStrokeWidth = clampStrokeWidth(
+      12 / bands.length,
+      UNSELECTED_STROKE_MIN,
+      UNSELECTED_STROKE_MAX,
+    )
+    const selectedStrokeWidth = clampStrokeWidth(
+      30 / bands.length,
+      SELECTED_STROKE_MIN,
+      SELECTED_STROKE_MAX,
+    )
     const bandRadii = useMemo(
       () =>
         bands.map(
@@ -54,13 +69,12 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             const keyIndex = keys.indexOf(cell.camelotKey)
             const startAngle = (keyIndex / keys.length) * Math.PI * 2 - Math.PI / 2
             const endAngle = ((keyIndex + 1) / keys.length) * Math.PI * 2 - Math.PI / 2
-            const ringSize = (outerRadius - innerRadius) / bands.length
             const path = arc()({
               innerRadius: innerRadius + ringSize * cell.bandIndex,
-              outerRadius: innerRadius + ringSize * (cell.bandIndex + 1) - 3,
+              outerRadius: innerRadius + ringSize * (cell.bandIndex + 1),
               startAngle,
               endAngle,
-              padAngle: 0.01,
+              padAngle: 0,
             })
 
             return (
@@ -69,7 +83,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
                 d={path ?? undefined}
                 fill={cell.count === 0 ? 'rgba(255,255,255,0.05)' : colorScale(cell.count)}
                 stroke={selectedCellId === cell.id ? '#fff' : 'rgba(255,255,255,0.08)'}
-                strokeWidth={selectedCellId === cell.id ? 2.5 : 1}
+                strokeWidth={selectedCellId === cell.id ? selectedStrokeWidth : unselectedStrokeWidth}
                 className="chart-region"
                 onClick={() => onSelect(cell.id)}
               >
@@ -112,5 +126,9 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
 )
 
 PolarDensityChart.displayName = 'PolarDensityChart'
+
+function clampStrokeWidth(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value))
+}
 
 export default PolarDensityChart
