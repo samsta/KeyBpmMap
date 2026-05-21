@@ -109,7 +109,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             <text
               key={`${band.label}-label`}
               x={0}
-              y={-(bandRadii[index] - ringSize / 2)}
+              y={ringSize / 2 - bandRadii[index]}
               textAnchor="middle"
               className="chart-label muted"
               dominantBaseline="middle"
