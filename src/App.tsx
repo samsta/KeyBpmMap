@@ -590,6 +590,79 @@ function App() {
           <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
           <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
         </ul>
+
+        <div className="hero-social-links" aria-label="Skonoks links">
+          <a
+            href="https://soundcloud.com/skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Soundcloud"
+            title="Soundcloud"
+          >
+            <img src="/social/soundcloud.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://skonoks.bandcamp.com/"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Bandcamp"
+            title="Bandcamp"
+          >
+            <img src="/social/bandcamp.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.beatport.com/artist/skonoks/1160631"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="BeatPort"
+            title="BeatPort"
+          >
+            <img src="/social/beatport.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://tidal.com/@skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Tidal"
+            title="Tidal"
+          >
+            <img src="/social/tidal.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://open.spotify.com/artist/1qCStUUvKfIofiPt236xhP"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Spotify"
+            title="Spotify"
+          >
+            <img src="/social/spotify.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.instagram.com/skonoks_/"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Instagram"
+            title="Instagram"
+          >
+            <img src="/social/instagram.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.facebook.com/skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="Facebook"
+            title="Facebook"
+          >
+            <img src="/social/facebook.png" alt="" aria-hidden="true" />
+          </a>
+        </div>
       </section>
 
       <section className="panel source-panel">
