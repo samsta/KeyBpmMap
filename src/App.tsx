@@ -136,11 +136,7 @@ function App() {
     [polarKeyMode],
   )
   const polarKeySet = useMemo(() => new Set(polarKeys), [polarKeys])
-  const polarCells = useMemo(
-    () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
-    [densityCells, polarKeySet],
-  )
-  const heatmapCells = useMemo(
+  const visibleKeyCells = useMemo(
     () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
     [densityCells, polarKeySet],
   )
@@ -480,7 +476,7 @@ function App() {
           <PolarDensityChart
             ref={polarRef}
             bands={bpmBands}
-            cells={polarCells}
+            cells={visibleKeyCells}
             keys={polarKeys}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
@@ -524,7 +520,7 @@ function App() {
           <HeatmapChart
             ref={heatmapRef}
             bands={bpmBands}
-            cells={heatmapCells}
+            cells={visibleKeyCells}
             keys={polarKeys}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
