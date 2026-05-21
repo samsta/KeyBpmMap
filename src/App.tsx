@@ -184,6 +184,11 @@ function App() {
     }
   }
 
+  const handleChangeKeyMode = (mode: PolarKeyMode) => {
+    setPolarKeyMode(mode)
+    setSelectedCellId(null)
+  }
+
   const handleOpenDatabase = async () => {
     const pickerWindow = window as Window & {
       showOpenFilePicker?: (options?: OpenFilePickerConfig) => Promise<OpenFileHandle[]>
@@ -455,10 +460,7 @@ function App() {
                     key={mode}
                     type="button"
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
-                    onClick={() => {
-                      setPolarKeyMode(mode)
-                      setSelectedCellId(null)
-                    }}
+                    onClick={() => handleChangeKeyMode(mode)}
                   >
                     {mode === 'both' ? 'A + B' : `${mode} only`}
                   </button>
@@ -499,10 +501,7 @@ function App() {
                     key={`heatmap-${mode}`}
                     type="button"
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
-                    onClick={() => {
-                      setPolarKeyMode(mode)
-                      setSelectedCellId(null)
-                    }}
+                    onClick={() => handleChangeKeyMode(mode)}
                   >
                     {mode === 'both' ? 'A + B' : `${mode} only`}
                   </button>
