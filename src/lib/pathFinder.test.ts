@@ -134,6 +134,25 @@ describe('findNavigationPaths', () => {
     expect(stepLimitedPaths).toEqual([])
   })
 
+  it('checks max average step cost on the completed path', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('mid', '8B', 120),
+      makeTrack('end', '8B', 120),
+    ]
+
+    const paths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 10,
+      maxStepCost: 4,
+      maxAverageStepCost: 1.5,
+    })
+
+    expect(paths).toHaveLength(1)
+    expect(paths[0]?.trackIds).toEqual(['start', 'mid', 'end'])
+    expect(paths[0]?.totalCost).toBe(2)
+  })
+
   it('returns no paths when either endpoint is missing', () => {
     const tracks: TrackRecord[] = [makeTrack('start', '8A', 120)]
     const settings: PathFinderSettings = { ...DEFAULT_PATH_FINDER_SETTINGS }

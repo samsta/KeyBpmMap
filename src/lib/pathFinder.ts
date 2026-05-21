@@ -233,6 +233,11 @@ export function findNavigationPaths(
     }
 
     if (currentTrackId === endTrackId && current.steps.length > 0) {
+      const averageCost = current.totalCost / current.steps.length
+      if (averageCost - settings.maxAverageStepCost > EPSILON) {
+        continue
+      }
+
       results.push({
         id: current.trackIds.join('→'),
         trackIds: current.trackIds,
@@ -274,12 +279,6 @@ export function findNavigationPaths(
 
         const totalCost = current.totalCost + transition.stepCost
         if (totalCost - settings.maxTotalCost > EPSILON) {
-          continue
-        }
-
-        const stepCount = current.steps.length + 1
-        const averageCost = totalCost / stepCount
-        if (averageCost - settings.maxAverageStepCost > EPSILON) {
           continue
         }
 
