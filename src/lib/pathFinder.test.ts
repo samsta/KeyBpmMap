@@ -1,0 +1,102 @@
+import { describe, expect, it } from 'vitest'
+import {
+  DEFAULT_PATH_FINDER_SETTINGS,
+  findNavigationPaths,
+  type PathFinderSettings,
+} from './pathFinder'
+import type { TrackRecord } from '../types'
+
+const makeTrack = (
+  id: string,
+  camelotKey: string,
+  bpm: number,
+): TrackRecord => ({
+  id,
+  title: id,
+  artist: 'artist',
+  bpm,
+  rating: null,
+  camelotKey,
+  rawKey: null,
+  path: '',
+  playlists: [],
+})
+
+describe('findNavigationPaths', () => {
+  it('returns the lowest-cost path first', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '8B', 120),
+      makeTrack('slow-hop', '8A', 122),
+      makeTrack('fast-hop', '8A', 126),
+    ]
+
+    const paths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 10,
+    })
+
+    expect(paths.length).toBeGreaterThan(0)
+    expect(paths[0]?.trackIds).toEqual(['start', 'end'])
+    expect(paths[0]?.totalCost).toBeCloseTo(2, 6)
+  })
+
+  it('caps results to 5 best paths and honors maxTotalCost', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '8B', 120),
+      makeTrack('mid-1', '8A', 121),
+      makeTrack('mid-2', '8A', 122),
+      makeTrack('mid-3', '8A', 123),
+      makeTrack('mid-4', '8A', 124),
+      makeTrack('mid-5', '8A', 125),
+      makeTrack('mid-6', '8A', 126),
+    ]
+
+    const allPaths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 100,
+    })
+    expect(allPaths).toHaveLength(5)
+
+    const tightPaths = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      maxTotalCost: 2.1,
+    })
+    expect(tightPaths).toHaveLength(1)
+    expect(tightPaths[0]?.trackIds).toEqual(['start', 'end'])
+  })
+
+  it('supports optional key change by tempo', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '3A', 127),
+    ]
+
+    const disabled = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      allowKeyChangeByTempo: false,
+      maxTotalCost: 10,
+    })
+    expect(disabled).toEqual([])
+
+    const enabled = findNavigationPaths(tracks, 'start', 'end', {
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      allowKeyChangeByTempo: true,
+      maxTotalCost: 10,
+    })
+
+    expect(enabled).toHaveLength(1)
+    expect(enabled[0]?.steps[0]?.adjustment).toBe('speed-up')
+    expect(enabled[0]?.totalCost).toBeGreaterThan(3)
+    expect(enabled[0]?.totalCost).toBeLessThan(4)
+  })
+
+  it('returns no paths when either endpoint is missing', () => {
+    const tracks: TrackRecord[] = [makeTrack('start', '8A', 120)]
+    const settings: PathFinderSettings = { ...DEFAULT_PATH_FINDER_SETTINGS }
+
+    expect(findNavigationPaths(tracks, 'start', 'end', settings)).toEqual([])
+    expect(findNavigationPaths(tracks, '', 'end', settings)).toEqual([])
+  })
+})

@@ -109,7 +109,8 @@
 }
 
 .source-panel,
-.filters-panel {
+.filters-panel,
+.pathfinder-panel {
   padding: 24px 28px;
 }
 
@@ -142,6 +143,10 @@ select {
   color: #f8fafc;
   background: rgba(15, 23, 42, 0.72);
   box-sizing: border-box;
+}
+
+input[type='checkbox'] {
+  width: auto;
 }
 
 .stats-grid,
@@ -251,6 +256,80 @@ select {
 
 .insights-grid {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.pathfinder-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.path-weight-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.path-checkbox {
+  align-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.path-results-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.path-graph-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.path-graph {
+  width: 100%;
+  min-width: 460px;
+  height: auto;
+}
+
+.path-graph-row {
+  cursor: pointer;
+}
+
+.path-graph-row polyline {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.55);
+  stroke-width: 2;
+}
+
+.path-graph-row circle {
+  fill: rgba(30, 41, 59, 1);
+  stroke: rgba(148, 163, 184, 0.55);
+  stroke-width: 2;
+}
+
+.path-graph-row.is-selected polyline,
+.path-graph-row.is-selected circle {
+  stroke: rgba(34, 211, 238, 0.9);
+}
+
+.path-graph-label,
+.path-graph-cost,
+.path-graph-node-label {
+  fill: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.path-summary-list {
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.path-details {
+  display: grid;
+  gap: 10px;
 }
 
 .insight-subtitle,
@@ -390,6 +469,7 @@ select {
   .hero-panel,
   .source-panel,
   .filters-panel,
+  .pathfinder-panel,
   .chart-panel,
   .insight-panel {
     padding: 20px;

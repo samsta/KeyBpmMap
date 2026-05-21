@@ -11,6 +11,7 @@ It reads local Engine DJ SQLite databases and Traktor `collection.nml` files dir
 - Browser-only Traktor `collection.nml` loading, including playlist metadata
 - Engine numeric, Open Key, and standard musical key → Camelot conversion
 - Polar harmonic density map and rectangular BPM heatmap
+- Weighted path finder between start/end tracks with configurable key/tempo costs
 - Playlist, rating, BPM, and text filters
 - Region inspection for exact track lists inside a selected cell
 - Playlist transition summaries derived from playlist ordering

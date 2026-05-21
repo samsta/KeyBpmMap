@@ -16,6 +16,14 @@ import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
 import { downloadSvgAsPng } from './lib/exportSvg'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
+import {
+  DEFAULT_PATH_FINDER_SETTINGS,
+  clampPathFinderSettings,
+  findNavigationPaths,
+  type NavigationPath,
+  type PathFinderSettings,
+  type PathFinderWeights,
+} from './lib/pathFinder'
 import type { LibraryData, SparseCellSummary, TrackRecord } from './types'
 
 const initialFilters = {
@@ -44,7 +52,19 @@ type PolarKeyMode = 'both' | 'A' | 'B'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
 const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
 const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
+const PATH_FINDER_SETTINGS_STORAGE_KEY = 'keybpmmap.pathFinderSettings'
 const APP_VERSION = __APP_VERSION__
+const PATH_WEIGHT_FIELDS: Array<{ key: keyof PathFinderWeights; label: string }> = [
+  { key: 'sameKey', label: 'same key' },
+  { key: 'oneUp', label: 'one up' },
+  { key: 'oneDown', label: 'one down' },
+  { key: 'aToB', label: 'A→B' },
+  { key: 'bToA', label: 'B→A' },
+  { key: 'energyBoost', label: 'xA→(x+3)B' },
+  { key: 'centerJump', label: 'center jump' },
+  { key: 'tempoPercent', label: 'tempo per %' },
+  { key: 'keyChangeByTempo', label: 'tempo key change' },
+]
 
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
@@ -57,6 +77,14 @@ function App() {
   const [keyRepresentation, setKeyRepresentation] = useState<KeyRepresentation>(
     getInitialKeyRepresentation,
   )
+  const [pathFinderSettings, setPathFinderSettings] = useState<PathFinderSettings>(
+    getInitialPathFinderSettings,
+  )
+  const [pathSelection, setPathSelection] = useState({
+    startTrackId: '',
+    endTrackId: '',
+  })
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
@@ -68,6 +96,17 @@ function App() {
       // Ignore localStorage persistence errors.
     }
   }, [keyRepresentation])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        PATH_FINDER_SETTINGS_STORAGE_KEY,
+        JSON.stringify(pathFinderSettings),
+      )
+    } catch {
+      // Ignore localStorage persistence errors.
+    }
+  }, [pathFinderSettings])
 
   const playlistLookup = useMemo(
     () => new Map(library.playlists.map((playlist) => [playlist.id, playlist])),
@@ -138,6 +177,60 @@ function App() {
   )
   const summary = useMemo(() => summarizeTracks(filteredTracks), [filteredTracks])
   const sparseCells = useMemo(() => findSparseCells(densityCells, bpmBands), [bpmBands, densityCells])
+  const pathScopeTracks = useMemo(
+    () =>
+      [...filteredTracks].sort(
+        (left, right) =>
+          left.artist.localeCompare(right.artist) ||
+          left.title.localeCompare(right.title) ||
+          left.id.localeCompare(right.id),
+      ),
+    [filteredTracks],
+  )
+  const resolvedPathSelection = useMemo(() => {
+    const trackIds = pathScopeTracks.map((track) => track.id)
+    if (trackIds.length === 0) {
+      return { startTrackId: '', endTrackId: '' }
+    }
+
+    const trackIdSet = new Set(trackIds)
+    const startTrackId = trackIdSet.has(pathSelection.startTrackId)
+      ? pathSelection.startTrackId
+      : trackIds[0]
+    const endCandidates = trackIds.filter((trackId) => trackId !== startTrackId)
+    const endTrackId = endCandidates.includes(pathSelection.endTrackId)
+      ? pathSelection.endTrackId
+      : (endCandidates[0] ?? startTrackId)
+
+    return { startTrackId, endTrackId }
+  }, [pathScopeTracks, pathSelection.endTrackId, pathSelection.startTrackId])
+  const pathTrackLookup = useMemo(
+    () => new Map(pathScopeTracks.map((track) => [track.id, track])),
+    [pathScopeTracks],
+  )
+  const navigationPaths = useMemo(
+    () =>
+      findNavigationPaths(
+        pathScopeTracks,
+        resolvedPathSelection.startTrackId,
+        resolvedPathSelection.endTrackId,
+        pathFinderSettings,
+      ),
+    [pathFinderSettings, pathScopeTracks, resolvedPathSelection.endTrackId, resolvedPathSelection.startTrackId],
+  )
+  const selectedPath = useMemo<NavigationPath | null>(
+    () =>
+      navigationPaths.find((path) => path.id === selectedPathId) ??
+      navigationPaths[0] ??
+      null,
+    [navigationPaths, selectedPathId],
+  )
+  const pathGraphMaxNodes = useMemo(
+    () => Math.max(...navigationPaths.map((path) => path.trackIds.length), 0),
+    [navigationPaths],
+  )
+  const pathGraphWidth = Math.max(460, pathGraphMaxNodes * 150)
+  const pathGraphHeight = Math.max(130, navigationPaths.length * 76 + 24)
   const formatVisibleKey = useMemo(
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
@@ -179,6 +272,37 @@ function App() {
   const handleChangeKeyMode = (mode: PolarKeyMode) => {
     setPolarKeyMode(mode)
     setSelectedCellId(null)
+  }
+
+  const handlePathWeightChange = (weight: keyof PathFinderWeights, value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        weights: {
+          ...current.weights,
+          [weight]: nextValue,
+        },
+      }),
+    )
+  }
+
+  const handlePathMaxCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxTotalCost: nextValue,
+      }),
+    )
   }
 
   const handleOpenDatabase = async () => {
@@ -490,6 +614,191 @@ function App() {
         </article>
       </section>
 
+      <section className="panel pathfinder-panel">
+        <div className="chart-header">
+          <div>
+            <h2>Path finder</h2>
+            <p>
+              Find weighted routes between two tracks using key transitions, tempo deltas, and optional
+              tempo-based key changes.
+            </p>
+            <p>Showing up to 5 best paths under the configured max total cost.</p>
+          </div>
+        </div>
+
+        <div className="field-grid">
+          <label>
+            Start track
+            <select
+              value={resolvedPathSelection.startTrackId}
+              onChange={(event) =>
+                setPathSelection((current) => ({ ...current, startTrackId: event.target.value }))
+              }
+            >
+              {pathScopeTracks.map((track) => (
+                <option key={`path-start-${track.id}`} value={track.id}>
+                  {formatTrackLabel(track)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            End track
+            <select
+              value={resolvedPathSelection.endTrackId}
+              onChange={(event) =>
+                setPathSelection((current) => ({ ...current, endTrackId: event.target.value }))
+              }
+            >
+              {pathScopeTracks.map((track) => (
+                <option key={`path-end-${track.id}`} value={track.id}>
+                  {formatTrackLabel(track)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Max total cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxTotalCost}
+              onChange={(event) => handlePathMaxCostChange(event.target.value)}
+            />
+          </label>
+
+          <label className="path-checkbox">
+            <span>Allow key change by tempo</span>
+            <input
+              type="checkbox"
+              checked={pathFinderSettings.allowKeyChangeByTempo}
+              onChange={(event) =>
+                setPathFinderSettings((current) => ({
+                  ...current,
+                  allowKeyChangeByTempo: event.target.checked,
+                }))
+              }
+            />
+          </label>
+        </div>
+
+        <div className="field-grid path-weight-grid">
+          {PATH_WEIGHT_FIELDS.map((field) => (
+            <label key={field.key}>
+              {field.label}
+              <input
+                type="number"
+                step="0.1"
+                value={pathFinderSettings.weights[field.key]}
+                onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+
+        {navigationPaths.length > 0 ? (
+          <div className="path-results-grid">
+            <div className="path-graph-wrapper">
+              <svg
+                className="path-graph"
+                viewBox={`0 0 ${pathGraphWidth} ${pathGraphHeight}`}
+                aria-label="Navigation path graph"
+              >
+                {navigationPaths.map((path, pathIndex) => {
+                  const y = 40 + pathIndex * 70
+                  const stepWidth =
+                    path.trackIds.length <= 1 ? 0 : (pathGraphWidth - 120) / (path.trackIds.length - 1)
+                  const points = path.trackIds
+                    .map((_, index) => `${60 + index * stepWidth},${y}`)
+                    .join(' ')
+                  const isSelected = selectedPath?.id === path.id
+
+                  return (
+                    <g
+                      key={path.id}
+                      className={isSelected ? 'path-graph-row is-selected' : 'path-graph-row'}
+                      onClick={() => setSelectedPathId(path.id)}
+                    >
+                      <polyline points={points} />
+                      {path.trackIds.map((trackId, nodeIndex) => (
+                        <g key={`${path.id}:${trackId}`}>
+                          <circle cx={60 + nodeIndex * stepWidth} cy={y} r={12} />
+                          <text
+                            x={60 + nodeIndex * stepWidth}
+                            y={y + 5}
+                            textAnchor="middle"
+                            className="path-graph-node-label"
+                          >
+                            {nodeIndex + 1}
+                          </text>
+                        </g>
+                      ))}
+                      <text x={10} y={y + 5} className="path-graph-label">
+                        #{pathIndex + 1}
+                      </text>
+                      <text x={pathGraphWidth - 10} y={y + 5} textAnchor="end" className="path-graph-cost">
+                        {path.totalCost.toFixed(2)}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+
+            <ul className="simple-list path-summary-list">
+              {navigationPaths.map((path, pathIndex) => (
+                <li key={`summary:${path.id}`}>
+                  <button type="button" onClick={() => setSelectedPathId(path.id)}>
+                    <strong>Path #{pathIndex + 1}</strong>
+                    <span>
+                      {path.trackIds.length - 1} transition{path.trackIds.length - 1 === 1 ? '' : 's'}
+                    </span>
+                    <em>{path.totalCost.toFixed(2)} cost</em>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {selectedPath ? (
+              <div className="path-details">
+                <p className="insight-subtitle">
+                  Path total: {selectedPath.totalCost.toFixed(2)} across {selectedPath.steps.length} step
+                  {selectedPath.steps.length === 1 ? '' : 's'}
+                </p>
+                <ul className="track-list">
+                  {selectedPath.steps.map((step, index) => {
+                    const fromTrack = pathTrackLookup.get(step.fromTrackId)
+                    const toTrack = pathTrackLookup.get(step.toTrackId)
+                    return (
+                      <li key={`${selectedPath.id}:${step.fromTrackId}:${step.toTrackId}:${index}`}>
+                        <div className="track-title">
+                          <strong>Step {index + 1}</strong>
+                          <span>
+                            {fromTrack ? formatTrackLabel(fromTrack) : step.fromTrackId} →{' '}
+                            {toTrack ? formatTrackLabel(toTrack) : step.toTrackId}
+                          </span>
+                        </div>
+                        <div className="track-meta">
+                          <span>{formatPathStepSummary(step, formatVisibleKey)}</span>
+                          <span>{step.stepCost.toFixed(2)} cost</span>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="placeholder-text">
+            No path found for the selected tracks and max total cost. Increase the max cost or adjust
+            weights.
+          </p>
+        )}
+      </section>
+
       <section className="visual-grid">
         <article className="panel chart-panel">
           <div className="chart-header">
@@ -743,6 +1052,44 @@ function formatKeyRepresentationLabel(representation: KeyRepresentation): string
   }
 }
 
+function formatTrackLabel(track: TrackRecord): string {
+  return `${track.artist} — ${track.title}`
+}
+
+function formatPathStepSummary(
+  step: NavigationPath['steps'][number],
+  formatVisibleKey: (camelotKey: string) => string,
+): string {
+  const adjustmentLabel =
+    step.adjustment === 'none' ? '' : ` · ${step.adjustment} (${step.adjustmentCost.toFixed(2)})`
+  return `${formatVisibleKey(step.fromKey)} ${step.fromBpm.toFixed(1)} → ${formatVisibleKey(step.toKey)} ${step.toBpm.toFixed(1)} BPM · ${formatPathRule(step.keyRule)} (${step.keyCost.toFixed(2)}) · tempo ${step.tempoPercentDelta.toFixed(2)}% (${step.tempoCost.toFixed(2)})${adjustmentLabel}`
+}
+
+function formatPathRule(rule: keyof PathFinderWeights): string {
+  switch (rule) {
+    case 'sameKey':
+      return 'same key'
+    case 'oneUp':
+      return 'one up'
+    case 'oneDown':
+      return 'one down'
+    case 'aToB':
+      return 'A→B'
+    case 'bToA':
+      return 'B→A'
+    case 'energyBoost':
+      return 'xA→(x+3)B'
+    case 'centerJump':
+      return 'center jump'
+    case 'tempoPercent':
+      return 'tempo'
+    case 'keyChangeByTempo':
+      return 'tempo key change'
+    default:
+      return rule
+  }
+}
+
 function asKeyRepresentation(value: string): KeyRepresentation {
   return KEY_REPRESENTATIONS.includes(value as KeyRepresentation)
     ? (value as KeyRepresentation)
@@ -758,6 +1105,31 @@ function getInitialKeyRepresentation(): KeyRepresentation {
     return asKeyRepresentation(window.localStorage.getItem(KEY_REPRESENTATION_STORAGE_KEY) ?? '')
   } catch {
     return 'camelot'
+  }
+}
+
+function getInitialPathFinderSettings(): PathFinderSettings {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PATH_FINDER_SETTINGS
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PATH_FINDER_SETTINGS_STORAGE_KEY)
+    if (!raw) {
+      return DEFAULT_PATH_FINDER_SETTINGS
+    }
+
+    const parsed = JSON.parse(raw)
+    return clampPathFinderSettings({
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...parsed,
+      weights: {
+        ...DEFAULT_PATH_FINDER_SETTINGS.weights,
+        ...(parsed as { weights?: Partial<PathFinderWeights> }).weights,
+      },
+    })
+  } catch {
+    return DEFAULT_PATH_FINDER_SETTINGS
   }
 }
 
