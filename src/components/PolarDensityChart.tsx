@@ -21,11 +21,14 @@ const UNSELECTED_STROKE_MIN = 0.1
 const UNSELECTED_STROKE_MAX = 1
 const SELECTED_STROKE_MIN = 0.5
 const SELECTED_STROKE_MAX = 2.5
+const BAND_LABEL_FONT_MIN = 4
+const BAND_LABEL_FONT_MAX = 12.48
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const ringSize = (outerRadius - innerRadius) / bands.length
+    const bandLabelFontSize = clampValue(BAND_LABEL_FONT_MAX * (ringSize / 18), BAND_LABEL_FONT_MIN, BAND_LABEL_FONT_MAX)
     const unselectedStrokeWidth = clampStrokeWidth(
       UNSELECTED_STROKE_BASE / bands.length,
       UNSELECTED_STROKE_MIN,
@@ -101,9 +104,11 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
             <text
               key={`${band.label}-label`}
               x={0}
-              y={-bandRadii[index] + 14}
+              y={-(innerRadius + ringSize * index + ringSize / 2)}
               textAnchor="middle"
               className="chart-label muted"
+              dominantBaseline="middle"
+              style={{ fontSize: `${bandLabelFontSize}px` }}
             >
               {band.label}
             </text>
@@ -133,6 +138,10 @@ PolarDensityChart.displayName = 'PolarDensityChart'
  * Keeps inverse band-count stroke scaling within readable visual bounds.
  */
 function clampStrokeWidth(value: number, minimum: number, maximum: number): number {
+  return clampValue(value, minimum, maximum)
+}
+
+function clampValue(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value))
 }
 
