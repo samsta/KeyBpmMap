@@ -1,140 +1,198 @@
+import { XMLParser } from 'fast-xml-parser'
 import { normalizeCamelotKey } from './camelot'
 import type { LibraryData, PlaylistInfo, TrackRecord, TransitionRecord } from '../types'
 
-function getAttribute(element: Element | null, name: string): string | null {
-  const value = element?.getAttribute(name)?.trim()
-  return value ? value : null
+interface TraktorLocationNode {
+  VOLUME?: string
+  DIR?: string
+  FILE?: string
 }
 
-function asNumber(value: string | null): number | null {
+interface TraktorInfoNode {
+  KEY?: string
+  RANKING?: string
+}
+
+interface TraktorTempoNode {
+  BPM?: string
+}
+
+interface TraktorPrimaryKeyNode {
+  KEY?: string
+}
+
+interface TraktorPlaylistEntryNode {
+  PRIMARYKEY?: TraktorPrimaryKeyNode
+}
+
+interface TraktorPlaylistNode {
+  UUID?: string
+  ENTRY?: TraktorPlaylistEntryNode | TraktorPlaylistEntryNode[]
+}
+
+interface TraktorBrowserNode {
+  NAME?: string
+  TYPE?: string
+  SUBNODES?: {
+    NODE?: TraktorBrowserNode | TraktorBrowserNode[]
+  }
+  PLAYLIST?: TraktorPlaylistNode
+}
+
+interface TraktorCollectionEntryNode {
+  AUDIO_ID?: string
+  TITLE?: string
+  ARTIST?: string
+  LOCATION?: TraktorLocationNode
+  INFO?: TraktorInfoNode
+  TEMPO?: TraktorTempoNode
+  MUSICAL_KEY?: {
+    VALUE?: string
+  }
+}
+
+interface TraktorNmlDocument {
+  NML?: {
+    COLLECTION?: {
+      ENTRY?: TraktorCollectionEntryNode | TraktorCollectionEntryNode[]
+    }
+    PLAYLISTS?: {
+      NODE?: TraktorBrowserNode
+    }
+  }
+}
+
+const xmlParser = new XMLParser({
+  attributeNamePrefix: '',
+  ignoreAttributes: false,
+  parseTagValue: false,
+  trimValues: true,
+})
+
+function asArray<T>(value: T | T[] | null | undefined): T[] {
+  if (!value) {
+    return []
+  }
+
+  return Array.isArray(value) ? value : [value]
+}
+
+function asNonEmptyString(value: string | undefined): string | null {
   if (!value) {
     return null
   }
 
-  const parsed = Number(value)
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function asNumber(value: string | undefined): number | null {
+  const normalizedValue = asNonEmptyString(value)
+  if (!normalizedValue) {
+    return null
+  }
+
+  const parsed = Number(normalizedValue)
   return Number.isFinite(parsed) ? parsed : null
 }
 
-function normalizeTraktorRating(value: string | null): number | null {
+function normalizeTraktorRating(value: string | undefined): number | null {
   const ranking = asNumber(value)
   if (ranking === null) {
     return null
   }
 
-  return Math.max(0, Math.min(5, ranking / 51))
+  return Math.max(0, Math.min(5, Math.round(ranking / 51)))
 }
 
-function buildTraktorTrackId(entry: Element, location: Element | null, index: number): string {
-  const volume = getAttribute(location, 'VOLUME') ?? ''
-  const directory = getAttribute(location, 'DIR')
-  const fileName = getAttribute(location, 'FILE')
+function buildTraktorTrackId(entry: TraktorCollectionEntryNode, index: number): string {
+  const volume = asNonEmptyString(entry.LOCATION?.VOLUME) ?? ''
+  const directory = asNonEmptyString(entry.LOCATION?.DIR)
+  const fileName = asNonEmptyString(entry.LOCATION?.FILE)
 
   if (directory && fileName) {
     return `${volume}${directory}${fileName}`
   }
 
-  return (
-    getAttribute(entry, 'AUDIO_ID') ??
-    getAttribute(entry, 'TITLE') ??
-    `traktor-track-${index}`
-  )
+  return asNonEmptyString(entry.AUDIO_ID) ?? asNonEmptyString(entry.TITLE) ?? `traktor-track-${index}`
 }
 
-function normalizeTraktorPath(location: Element | null, fallbackId: string): string {
-  const directory = getAttribute(location, 'DIR')
-  const fileName = getAttribute(location, 'FILE')
+function normalizeTraktorPath(entry: TraktorCollectionEntryNode, fallbackId: string): string {
+  const directory = asNonEmptyString(entry.LOCATION?.DIR)
+  const fileName = asNonEmptyString(entry.LOCATION?.FILE)
   if (!directory || !fileName) {
     return fallbackId
   }
 
-  const volume = getAttribute(location, 'VOLUME')
+  const volume = asNonEmptyString(entry.LOCATION?.VOLUME)
   const normalizedDirectory = directory.replaceAll('/:', '/')
   return `${volume ? `${volume}:` : ''}${normalizedDirectory}${fileName}`
 }
 
-function getDirectChildren(parent: Element | null, tagName: string): Element[] {
-  return parent
-    ? Array.from(parent.children).filter((child) => child.tagName === tagName)
-    : []
-}
-
 function collectPlaylistNodes(
-  node: Element,
+  node: TraktorBrowserNode,
   trackLookup: Map<string, TrackRecord>,
   parentNames: string[] = [],
 ): PlaylistInfo[] {
-  const nodeName = getAttribute(node, 'NAME')
-  const nodeType = getAttribute(node, 'TYPE')
+  const nodeName = asNonEmptyString(node.NAME)
+  const nodeType = asNonEmptyString(node.TYPE)
   const nextParentNames =
     nodeName && nodeName !== '$ROOT' && nodeType !== 'PLAYLIST'
       ? [...parentNames, nodeName]
       : parentNames
 
   if (nodeType === 'PLAYLIST') {
-    const playlistElement = getDirectChildren(node, 'PLAYLIST')[0] ?? null
     const playlistName =
       [...parentNames, nodeName ?? 'Playlist'].filter(Boolean).join(' / ') || 'Playlist'
-    const trackIds = getDirectChildren(playlistElement, 'ENTRY')
-      .map((playlistEntry) =>
-        getAttribute(getDirectChildren(playlistEntry, 'PRIMARYKEY')[0] ?? null, 'KEY'),
-      )
+    const trackIds = asArray(node.PLAYLIST?.ENTRY)
+      .map((playlistEntry) => asNonEmptyString(playlistEntry.PRIMARYKEY?.KEY))
       .filter((trackId): trackId is string => !!trackId && trackLookup.has(trackId))
 
     return trackIds.length > 0
       ? [
           {
-            id: getAttribute(playlistElement, 'UUID') ?? playlistName,
+            id: asNonEmptyString(node.PLAYLIST?.UUID) ?? playlistName,
             name: playlistName,
-            trackIds,
+            trackIds: trackIds.filter(
+              (trackId, index, allTrackIds) => allTrackIds.indexOf(trackId) === index,
+            ),
           },
         ]
       : []
   }
 
-  return getDirectChildren(getDirectChildren(node, 'SUBNODES')[0] ?? null, 'NODE').flatMap(
-    (childNode) => collectPlaylistNodes(childNode, trackLookup, nextParentNames),
+  return asArray(node.SUBNODES?.NODE).flatMap((childNode) =>
+    collectPlaylistNodes(childNode, trackLookup, nextParentNames),
   )
 }
 
 export async function loadTraktorLibrary(file: File): Promise<LibraryData> {
   const xmlText = await file.text()
-  const document = new DOMParser().parseFromString(xmlText, 'application/xml')
-  const parserError = document.querySelector('parsererror')
-  if (parserError) {
-    throw new Error('The selected Traktor collection could not be parsed.')
-  }
-
-  const collectionEntries = Array.from(document.querySelectorAll('COLLECTION > ENTRY'))
+  const document = xmlParser.parse(xmlText) as TraktorNmlDocument
+  const collectionEntries = asArray(document.NML?.COLLECTION?.ENTRY)
   if (collectionEntries.length === 0) {
     throw new Error('No Traktor collection entries were found in the selected file.')
   }
 
   const tracks = collectionEntries.map<TrackRecord>((entry, index) => {
-    const location = getDirectChildren(entry, 'LOCATION')[0] ?? null
-    const info = getDirectChildren(entry, 'INFO')[0] ?? null
-    const tempo = getDirectChildren(entry, 'TEMPO')[0] ?? null
-    const trackId = buildTraktorTrackId(entry, location, index)
+    const trackId = buildTraktorTrackId(entry, index)
 
     return {
       id: trackId,
-      title: getAttribute(entry, 'TITLE') ?? 'Untitled track',
-      artist: getAttribute(entry, 'ARTIST') ?? 'Unknown artist',
-      bpm: asNumber(getAttribute(tempo, 'BPM')),
-      rating: normalizeTraktorRating(getAttribute(info, 'RANKING')),
-      camelotKey: normalizeCamelotKey(getAttribute(info, 'KEY')),
-      rawKey: asNumber(getAttribute(getDirectChildren(entry, 'MUSICAL_KEY')[0] ?? null, 'VALUE')),
-      path: normalizeTraktorPath(location, trackId),
+      title: asNonEmptyString(entry.TITLE) ?? 'Untitled track',
+      artist: asNonEmptyString(entry.ARTIST) ?? 'Unknown artist',
+      bpm: asNumber(entry.TEMPO?.BPM),
+      rating: normalizeTraktorRating(entry.INFO?.RANKING),
+      camelotKey: normalizeCamelotKey(entry.INFO?.KEY),
+      rawKey: asNumber(entry.MUSICAL_KEY?.VALUE),
+      path: normalizeTraktorPath(entry, trackId),
       playlists: [],
     }
   })
 
   const trackLookup = new Map(tracks.map((track) => [track.id, track]))
-  const rootNode = document.querySelector('PLAYLISTS > NODE')
-  const playlists = (rootNode ? collectPlaylistNodes(rootNode, trackLookup) : [])
-    .map((playlist) => ({
-      ...playlist,
-      trackIds: playlist.trackIds.filter((trackId, index, trackIds) => trackIds.indexOf(trackId) === index),
-    }))
+  const playlists = asArray(document.NML?.PLAYLISTS?.NODE)
+    .flatMap((rootNode) => collectPlaylistNodes(rootNode, trackLookup))
     .sort((left, right) => left.name.localeCompare(right.name))
 
   for (const playlist of playlists) {

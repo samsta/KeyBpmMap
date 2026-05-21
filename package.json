@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "d3": "^7.9.0",
+    "fast-xml-parser": "^5.8.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "sql.js": "^1.14.1"

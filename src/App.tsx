@@ -226,7 +226,7 @@ function App() {
     <main className="app-shell">
       <section className="hero-panel panel">
         <div>
-          <p className="eyebrow">Client-only Engine DJ map</p>
+          <p className="eyebrow">Client-only DJ library map</p>
           <h1>See where your key and BPM density actually lives.</h1>
           <p className="lede">
             Load a local Engine DJ SQLite database or a Traktor
@@ -250,13 +250,13 @@ function App() {
             on Windows, while Traktor stores
             {' '}
             <code aria-label="Example macOS Traktor collection path">
-              ~/Documents/Native Instruments/Traktor [version]/collection.nml
+              ~/Documents/Native Instruments/Traktor 3/collection.nml
             </code>
             {' '}
             or
             {' '}
             <code aria-label="Example Windows Traktor collection path">
-              %USERPROFILE%\Documents\Native Instruments\Traktor [version]\collection.nml
+              %USERPROFILE%\Documents\Native Instruments\Traktor 3\collection.nml
             </code>
             .
           </p>
