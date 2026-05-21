@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_PATH_FINDER_SETTINGS,
   findNavigationPaths,
   type PathFinderSettings,
 } from './pathFinder'
@@ -22,6 +21,25 @@ const makeTrack = (
   playlists: [],
 })
 
+const TEST_PATH_FINDER_SETTINGS: PathFinderSettings = {
+  weights: {
+    sameKey: 0,
+    oneUp: 1,
+    oneDown: 1,
+    aToB: 2,
+    bToA: 2,
+    energyBoost: 1,
+    energyDrop: 1,
+    centerJump: 4,
+    tempoPercent: 1,
+    keyChangeByTempo: 3,
+  },
+  allowKeyChangeByTempo: false,
+  maxTotalCost: 10,
+  maxStepCost: 4,
+  maxAverageStepCost: 3,
+}
+
 describe('findNavigationPaths', () => {
   it('returns the lowest-cost path first', () => {
     const tracks: TrackRecord[] = [
@@ -32,7 +50,7 @@ describe('findNavigationPaths', () => {
     ]
 
     const paths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 10,
     })
 
@@ -54,13 +72,13 @@ describe('findNavigationPaths', () => {
     ]
 
     const allPaths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 100,
     })
     expect(allPaths).toHaveLength(10)
 
     const tightPaths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 2.1,
     })
     expect(tightPaths).toHaveLength(1)
@@ -74,14 +92,14 @@ describe('findNavigationPaths', () => {
     ]
 
     const disabled = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       allowKeyChangeByTempo: false,
       maxTotalCost: 10,
     })
     expect(disabled).toEqual([])
 
     const enabled = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       allowKeyChangeByTempo: true,
       maxTotalCost: 10,
       maxAverageStepCost: 10,
@@ -100,7 +118,7 @@ describe('findNavigationPaths', () => {
     ]
 
     const paths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 10,
     })
 
@@ -117,7 +135,7 @@ describe('findNavigationPaths', () => {
     ]
 
     const averageLimitedPaths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 10,
       maxAverageStepCost: 1.1,
       maxStepCost: 4,
@@ -126,7 +144,7 @@ describe('findNavigationPaths', () => {
     expect(averageLimitedPaths[0]?.trackIds).toEqual(['start', 'mid', 'end'])
 
     const stepLimitedPaths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 10,
       maxAverageStepCost: 3,
       maxStepCost: 1.5,
@@ -142,7 +160,7 @@ describe('findNavigationPaths', () => {
     ]
 
     const paths = findNavigationPaths(tracks, 'start', 'end', {
-      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...TEST_PATH_FINDER_SETTINGS,
       maxTotalCost: 10,
       maxStepCost: 4,
       maxAverageStepCost: 1.5,
@@ -155,7 +173,7 @@ describe('findNavigationPaths', () => {
 
   it('returns no paths when either endpoint is missing', () => {
     const tracks: TrackRecord[] = [makeTrack('start', '8A', 120)]
-    const settings: PathFinderSettings = { ...DEFAULT_PATH_FINDER_SETTINGS }
+    const settings: PathFinderSettings = { ...TEST_PATH_FINDER_SETTINGS }
 
     expect(findNavigationPaths(tracks, 'start', 'end', settings)).toEqual([])
     expect(findNavigationPaths(tracks, '', 'end', settings)).toEqual([])
