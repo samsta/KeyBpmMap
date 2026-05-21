@@ -449,8 +449,8 @@ function App() {
             <div>
               <h2>Polar harmonic density map</h2>
               <p>
-                Camelot {polarKeyMode === 'both' ? 'A/B' : polarKeyMode}-side wedges outside-in by{' '}
-                {bpmBandSize} BPM ring.
+                Camelot {formatKeyModeDescription(polarKeyMode)} wedges outside-in by {bpmBandSize}{' '}
+                BPM ring.
               </p>
             </div>
             <div className="chart-actions">
@@ -462,7 +462,7 @@ function App() {
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
                     onClick={() => handleChangeKeyMode(mode)}
                   >
-                    {mode === 'both' ? 'A + B' : `${mode} only`}
+                    {formatKeyModeButtonLabel(mode)}
                   </button>
                 ))}
               </div>
@@ -491,7 +491,7 @@ function App() {
               <h2>BPM versus key heatmap</h2>
               <p>
                 Quick comparison of dense and empty harmonic/tempo cells for Camelot{' '}
-                {polarKeyMode === 'both' ? 'A/B' : `${polarKeyMode}-side`} keys.
+                {formatKeyModeDescription(polarKeyMode)} keys.
               </p>
             </div>
             <div className="chart-actions">
@@ -503,7 +503,7 @@ function App() {
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
                     onClick={() => handleChangeKeyMode(mode)}
                   >
-                    {mode === 'both' ? 'A + B' : `${mode} only`}
+                    {formatKeyModeButtonLabel(mode)}
                   </button>
                 ))}
               </div>
@@ -634,6 +634,14 @@ function getSparseCellStatus(cell: SparseCellSummary): string {
   }
 
   return cell.cellCount === 1 ? '1 track' : '1 track each'
+}
+
+function formatKeyModeButtonLabel(mode: PolarKeyMode): string {
+  return mode === 'both' ? 'A + B' : `${mode} only`
+}
+
+function formatKeyModeDescription(mode: PolarKeyMode): string {
+  return mode === 'both' ? 'A/B-side' : `${mode}-side`
 }
 
 export default App

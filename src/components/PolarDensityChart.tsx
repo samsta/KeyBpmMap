@@ -129,6 +129,9 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
 
 PolarDensityChart.displayName = 'PolarDensityChart'
 
+/**
+ * Keeps inverse band-count stroke scaling within readable visual bounds.
+ */
 function clampStrokeWidth(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value))
 }
