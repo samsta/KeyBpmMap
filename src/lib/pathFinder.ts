@@ -3,7 +3,7 @@ import type { TrackRecord } from '../types'
 const EPSILON = 1e-9
 const SPEED_UP_FACTOR = 1.05946
 const SLOW_DOWN_FACTOR = 0.9439
-const MAX_PATH_RESULTS = 5
+const MAX_PATH_RESULTS = 10
 const MAX_EXPLORED_STATES = 50_000
 
 export interface PathFinderWeights {

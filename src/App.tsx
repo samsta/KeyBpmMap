@@ -832,7 +832,7 @@ function App() {
             </p>
             <p className="path-helper-copy">
               Weights define how expensive each key or tempo move is. Lower values prefer that move. The
-              search keeps only the 5 best paths under your path limits and runs only when you click Find
+              search keeps only the 10 best paths under your path limits and runs only when you click Find
               Path.
             </p>
           </div>

@@ -41,7 +41,7 @@ describe('findNavigationPaths', () => {
     expect(paths[0]?.totalCost).toBeCloseTo(2, 6)
   })
 
-  it('caps results to 5 best paths and honors maxTotalCost', () => {
+  it('caps results to 10 best paths and honors maxTotalCost', () => {
     const tracks: TrackRecord[] = [
       makeTrack('start', '8A', 120),
       makeTrack('end', '8B', 120),
@@ -57,7 +57,7 @@ describe('findNavigationPaths', () => {
       ...DEFAULT_PATH_FINDER_SETTINGS,
       maxTotalCost: 100,
     })
-    expect(allPaths).toHaveLength(5)
+    expect(allPaths).toHaveLength(10)
 
     const tightPaths = findNavigationPaths(tracks, 'start', 'end', {
       ...DEFAULT_PATH_FINDER_SETTINGS,
