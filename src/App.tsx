@@ -758,8 +758,7 @@ function App() {
           <div>
             <h2>Tracks in Scope</h2>
             <p>
-              Use this optional table to diagnose why tracks might be missing from plots. Tracks without BPM
-              are never plotted, and keys outside the current key-family filter are hidden.
+              View a list of tracks matching the above filter criteria.
             </p>
           </div>
           <button
@@ -779,8 +778,8 @@ function App() {
                   <th>Title</th>
                   <th>BPM</th>
                   <th>Key</th>
-                  <th>In Plots</th>
-                  <th>Path</th>
+                  <th>In Maps</th>
+                  <th>Path Finder</th>
                 </tr>
               </thead>
               <tbody>
@@ -805,7 +804,7 @@ function App() {
                             aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as start track`}
                             onClick={() => handleSetPathTrack('startTrack', track.id)}
                           >
-                            Start
+                            Set as Start Track
                           </button>
                           <button
                             type="button"
@@ -813,7 +812,7 @@ function App() {
                             aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as end track`}
                             onClick={() => handleSetPathTrack('endTrack', track.id)}
                           >
-                            End
+                            Set as End Track
                           </button>
                         </div>
                       </td>
