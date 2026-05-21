@@ -239,7 +239,7 @@ export function findNavigationPaths(
       }
 
       results.push({
-        id: current.trackIds.join('→'),
+        id: createNavigationPathId(current.trackIds, current.steps),
         trackIds: current.trackIds,
         steps: current.steps,
         totalCost: current.totalCost,
@@ -468,4 +468,24 @@ function clampWeight(value: number): number {
   }
 
   return Math.max(0, value)
+}
+
+function createNavigationPathId(trackIds: string[], steps: PathStep[]): string {
+  const trackSegment = trackIds.join('→')
+  const stepSegment = steps
+    .map((step) =>
+      [
+        step.fromTrackId,
+        step.toTrackId,
+        step.fromKey,
+        step.toKey,
+        step.adjustment,
+        step.keyRule,
+        step.fromBpm.toFixed(6),
+        step.toBpm.toFixed(6),
+      ].join(':'),
+    )
+    .join('|')
+
+  return `${trackSegment}::${stepSegment}`
 }

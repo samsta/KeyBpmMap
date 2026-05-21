@@ -111,6 +111,26 @@ describe('findNavigationPaths', () => {
     expect(enabled[0]?.totalCost).toBeLessThan(4)
   })
 
+  it('creates unique ids for paths with the same track sequence but different steps', () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '9A', 126),
+    ]
+
+    const paths = findNavigationPaths(tracks, 'start', 'end', {
+      ...TEST_PATH_FINDER_SETTINGS,
+      allowKeyChangeByTempo: true,
+      maxTotalCost: 100,
+      maxStepCost: 100,
+      maxAverageStepCost: 100,
+    })
+
+    expect(paths).toHaveLength(2)
+    expect(paths[0]?.trackIds).toEqual(['start', 'end'])
+    expect(paths[1]?.trackIds).toEqual(['start', 'end'])
+    expect(paths[0]?.id).not.toBe(paths[1]?.id)
+  })
+
   it('supports xB to (x-3)A transitions', () => {
     const tracks: TrackRecord[] = [
       makeTrack('start', '8B', 120),
