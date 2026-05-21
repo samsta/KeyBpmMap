@@ -596,7 +596,7 @@ function App() {
             href="https://soundcloud.com/skonoks"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Soundcloud"
             title="Soundcloud"
           >
@@ -606,7 +606,7 @@ function App() {
             href="https://skonoks.bandcamp.com/"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Bandcamp"
             title="Bandcamp"
           >
@@ -616,7 +616,7 @@ function App() {
             href="https://www.beatport.com/artist/skonoks/1160631"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="BeatPort"
             title="BeatPort"
           >
@@ -626,7 +626,7 @@ function App() {
             href="https://tidal.com/@skonoks"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Tidal"
             title="Tidal"
           >
@@ -636,7 +636,7 @@ function App() {
             href="https://open.spotify.com/artist/1qCStUUvKfIofiPt236xhP"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Spotify"
             title="Spotify"
           >
@@ -646,7 +646,7 @@ function App() {
             href="https://www.instagram.com/skonoks_/"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Instagram"
             title="Instagram"
           >
@@ -656,7 +656,7 @@ function App() {
             href="https://www.facebook.com/skonoks"
             className="hero-social-link"
             target="_blank"
-            rel="noreferrer noopener"
+            rel="noopener noreferrer"
             aria-label="Facebook"
             title="Facebook"
           >
