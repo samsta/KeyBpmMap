@@ -752,6 +752,7 @@ function App() {
                           <button
                             type="button"
                             className="secondary-button track-action-button"
+                            aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as start track`}
                             onClick={() => handleSetPathTrack('startTrack', track.id)}
                           >
                             Start
@@ -759,6 +760,7 @@ function App() {
                           <button
                             type="button"
                             className="secondary-button track-action-button"
+                            aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as end track`}
                             onClick={() => handleSetPathTrack('endTrack', track.id)}
                           >
                             End
@@ -907,7 +909,13 @@ function App() {
                         const x = 60 + nodeIndex * stepWidth
 
                         return (
-                        <g key={`${path.id}:${trackId}:${nodeIndex}`}>
+                        <g key={`${path.id}:${nodeIndex}`}>
+                          {track ? (
+                            <title>
+                              {track.artist} - {track.title} (Node {nodeIndex + 1}, Key:{' '}
+                              {formatVisibleKey(track.camelotKey)})
+                            </title>
+                          ) : null}
                           <circle cx={x} cy={y} r={12} />
                           <text
                             x={x}
