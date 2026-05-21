@@ -1,6 +1,7 @@
 # KeyBpmMap
 
 ![Tests](https://github.com/samsta/KeyBpmMap/actions/workflows/test.yml/badge.svg)
+![Build](https://github.com/samsta/KeyBpmMap/actions/workflows/deploy.yml/badge.svg)
 
 KeyBpmMap is a client-only React application for exploring the harmonic and tempo shape of a DJ music library.
 It reads local Engine DJ SQLite databases and Traktor `collection.nml` files directly in the browser, normalizes supported key formats into Camelot notation, and renders both a polar density map and a BPM-vs-key heatmap for fast library analysis.
@@ -11,6 +12,7 @@ It reads local Engine DJ SQLite databases and Traktor `collection.nml` files dir
 - Browser-only Traktor `collection.nml` loading, including playlist metadata
 - Engine numeric, Open Key, and standard musical key → Camelot conversion
 - Polar harmonic density map and rectangular BPM heatmap
+- Weighted path finder between start/end tracks with configurable key/tempo costs
 - Playlist, rating, BPM, and text filters
 - Region inspection for exact track lists inside a selected cell
 - Playlist transition summaries derived from playlist ordering

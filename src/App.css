@@ -109,7 +109,8 @@
 }
 
 .source-panel,
-.filters-panel {
+.filters-panel,
+.pathfinder-panel {
   padding: 24px 28px;
 }
 
@@ -142,6 +143,10 @@ select {
   color: #f8fafc;
   background: rgba(15, 23, 42, 0.72);
   box-sizing: border-box;
+}
+
+input[type='checkbox'] {
+  width: auto;
 }
 
 .stats-grid,
@@ -253,6 +258,156 @@ select {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.pathfinder-panel {
+  display: grid;
+  gap: 16px;
+  order: 999;
+}
+
+.path-weight-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.path-section-heading {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.path-weight-grid label {
+  grid-template-rows: minmax(2.5em, auto) min-content;
+}
+
+.path-weight-label-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.path-weight-label-text {
+  display: block;
+  line-height: 1.25;
+}
+
+.path-weight-tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  min-width: 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: help;
+}
+
+.path-weight-tooltip:focus-visible {
+  outline: 1px solid rgba(34, 211, 238, 0.7);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.pathfinder-panel input[type='number'],
+.pathfinder-panel input[type='search'],
+.pathfinder-panel select {
+  min-height: 44px;
+}
+
+.path-checkbox {
+  align-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.path-helper-copy,
+.path-status {
+  color: #94a3b8;
+}
+
+.path-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.path-results-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.path-graph-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  padding: 10px;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.path-graph {
+  width: 100%;
+  min-width: 460px;
+  height: auto;
+}
+
+.path-graph-row {
+  cursor: pointer;
+}
+
+.path-graph-row polyline {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.55);
+  stroke-width: 2;
+}
+
+.path-graph-row circle {
+  fill: rgba(30, 41, 59, 1);
+  stroke: rgba(148, 163, 184, 0.55);
+  stroke-width: 2;
+}
+
+.path-graph-row.is-selected polyline,
+.path-graph-row.is-selected circle {
+  stroke: rgba(34, 211, 238, 0.9);
+}
+
+.path-graph-label,
+.path-graph-node-label {
+  fill: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.path-graph-cost {
+  fill: #38bdf8;
+  font-size: 0.6rem;
+}
+
+.path-graph-track-label {
+  fill: #94a3b8;
+  font-size: 0.63rem;
+}
+
+.path-graph-track-artist {
+  font-weight: 700;
+  fill: #cbd5e1;
+}
+
+.path-summary-list {
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.path-details {
+  display: grid;
+  gap: 10px;
+}
+
 .insight-subtitle,
 .placeholder-text,
 .error-banner {
@@ -323,6 +478,49 @@ select {
   font-style: normal;
 }
 
+.track-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.track-action-button {
+  padding: 0.45rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.scope-track-table-wrapper {
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+}
+
+.scope-track-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.scope-track-table th,
+.scope-track-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.scope-track-table thead th {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.scope-track-table tbody td {
+  color: #cbd5e1;
+}
+
 .simple-list button {
   width: 100%;
   padding: 0;
@@ -390,6 +588,7 @@ select {
   .hero-panel,
   .source-panel,
   .filters-panel,
+  .pathfinder-panel,
   .chart-panel,
   .insight-panel {
     padding: 20px;

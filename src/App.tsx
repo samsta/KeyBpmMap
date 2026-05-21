@@ -16,6 +16,14 @@ import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
 import { downloadSvgAsPng } from './lib/exportSvg'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
+import {
+  DEFAULT_PATH_FINDER_SETTINGS,
+  clampPathFinderSettings,
+  findNavigationPaths,
+  type NavigationPath,
+  type PathFinderSettings,
+  type PathFinderWeights,
+} from './lib/pathFinder'
 import type { LibraryData, SparseCellSummary, TrackRecord } from './types'
 
 const initialFilters = {
@@ -41,10 +49,58 @@ interface OpenFilePickerConfig {
 }
 
 type PolarKeyMode = 'both' | 'A' | 'B'
+type PathSortMode = 'total' | 'average' | 'max'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
+const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
+  { value: 'total', label: 'Total Cost' },
+  { value: 'average', label: 'Average Transition Cost' },
+  { value: 'max', label: 'Max Transition Cost' },
+]
 const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
 const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
+const PATH_FINDER_SETTINGS_STORAGE_KEY = 'keybpmmap.pathFinderSettings'
 const APP_VERSION = __APP_VERSION__
+const PATH_WEIGHT_FIELDS: Array<{
+  key: keyof PathFinderWeights
+  label: string
+  description: string
+  exampleFrom?: string
+  exampleTo?: string
+  exampleText?: string
+}> = [
+  { key: 'sameKey', label: 'Same Key', description: 'Keep the same harmonic slot.', exampleFrom: '8A', exampleTo: '8A' },
+  { key: 'oneUp', label: 'One Up', description: 'Move clockwise by one on the wheel.', exampleFrom: '5A', exampleTo: '6A' },
+  { key: 'oneDown', label: 'One Down', description: 'Move counter-clockwise by one on the wheel.', exampleFrom: '6A', exampleTo: '5A' },
+  {
+    key: 'aToB',
+    label: 'A → B',
+    description: 'Jump from the inner ring to the outer ring, or from a minor key to its relative major.',
+    exampleFrom: '8A',
+    exampleTo: '8B',
+  },
+  {
+    key: 'bToA',
+    label: 'B → A',
+    description: 'Jump from the outer ring to the inner ring, or from a major key to its relative minor.',
+    exampleFrom: '8B',
+    exampleTo: '8A',
+  },
+  { key: 'energyBoost', label: 'xA → (x+3)B', description: 'Minor to major energy lift.', exampleFrom: '5A', exampleTo: '8B' },
+  { key: 'energyDrop', label: 'xB → (x-3)A', description: 'Major to minor inverse of the energy lift.', exampleFrom: '8B', exampleTo: '5A' },
+  { key: 'centerJump', label: 'Center Jump', description: 'Jump across the wheel center.', exampleFrom: '5A', exampleTo: '11A' },
+  {
+    key: 'tempoPercent',
+    label: 'Tempo Per %',
+    description: 'Cost per tempo percent difference.',
+    exampleText: 'Example: 120.0 BPM → 121.2 BPM is 1%.',
+  },
+  {
+    key: 'keyChangeByTempo',
+    label: 'Tempo Key Change',
+    description: 'Cost to shift key by tempo before evaluating transitions.',
+    exampleText: 'Example: 8A at 120 BPM +5.946% → 3A at 127.1 BPM.',
+  },
+]
 
 function App() {
   const [library, setLibrary] = useState<LibraryData>(() => createMockLibrary())
@@ -57,6 +113,22 @@ function App() {
   const [keyRepresentation, setKeyRepresentation] = useState<KeyRepresentation>(
     getInitialKeyRepresentation,
   )
+  const [pathFinderSettings, setPathFinderSettings] = useState<PathFinderSettings>(
+    getInitialPathFinderSettings,
+  )
+  const [pathSelection, setPathSelection] = useState({
+    startTrack: '',
+    endTrack: '',
+  })
+  const [pathSearchRequest, setPathSearchRequest] = useState<{
+    startTrackId: string
+    endTrackId: string
+    settings: PathFinderSettings
+  } | null>(null)
+  const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
+  const [pathSortMode, setPathSortMode] = useState<PathSortMode>('total')
+  const [showScopeTrackTable, setShowScopeTrackTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
@@ -68,6 +140,17 @@ function App() {
       // Ignore localStorage persistence errors.
     }
   }, [keyRepresentation])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        PATH_FINDER_SETTINGS_STORAGE_KEY,
+        JSON.stringify(pathFinderSettings),
+      )
+    } catch {
+      // Ignore localStorage persistence errors.
+    }
+  }, [pathFinderSettings])
 
   const playlistLookup = useMemo(
     () => new Map(library.playlists.map((playlist) => [playlist.id, playlist])),
@@ -138,6 +221,90 @@ function App() {
   )
   const summary = useMemo(() => summarizeTracks(filteredTracks), [filteredTracks])
   const sparseCells = useMemo(() => findSparseCells(densityCells, bpmBands), [bpmBands, densityCells])
+  const pathScopeTracks = useMemo(
+    () =>
+      [...filteredTracks].sort(
+        (left, right) =>
+          left.artist.localeCompare(right.artist) ||
+          left.title.localeCompare(right.title) ||
+          left.id.localeCompare(right.id),
+      ),
+    [filteredTracks],
+  )
+  const pathTrackOptions = useMemo(
+    () =>
+      pathScopeTracks.map((track) => ({
+        id: track.id,
+        label: formatTrackSearchLabel(track, keyRepresentation),
+      })),
+    [keyRepresentation, pathScopeTracks],
+  )
+  const pathTrackIdByLabel = useMemo(
+    () =>
+      new Map(
+        pathTrackOptions.map((option) => [option.label.toLowerCase(), option.id]),
+      ),
+    [pathTrackOptions],
+  )
+  const pathTrackLabelById = useMemo(
+    () => new Map(pathTrackOptions.map((option) => [option.id, option.label])),
+    [pathTrackOptions],
+  )
+  const pathTrackLookup = useMemo(
+    () => new Map(pathScopeTracks.map((track) => [track.id, track])),
+    [pathScopeTracks],
+  )
+  const searchedPathSelection = useMemo(() => {
+    if (!pathSearchRequest) {
+      return null
+    }
+
+    if (!pathTrackLookup.has(pathSearchRequest.startTrackId) || !pathTrackLookup.has(pathSearchRequest.endTrackId)) {
+      return null
+    }
+
+    return pathSearchRequest
+  }, [pathSearchRequest, pathTrackLookup])
+  const navigationPaths = useMemo(
+    () => {
+      if (!searchedPathSelection) {
+        return []
+      }
+
+      return findNavigationPaths(
+        pathScopeTracks,
+        searchedPathSelection.startTrackId,
+        searchedPathSelection.endTrackId,
+        searchedPathSelection.settings,
+      )
+    },
+    [pathScopeTracks, searchedPathSelection],
+  )
+  const sortedNavigationPaths = useMemo(
+    () =>
+      [...navigationPaths].sort((left, right) => {
+        const metricDelta = getPathSortMetric(left, pathSortMode) - getPathSortMetric(right, pathSortMode)
+        if (metricDelta !== 0) {
+          return metricDelta
+        }
+
+        return left.totalCost - right.totalCost || left.steps.length - right.steps.length
+      }),
+    [navigationPaths, pathSortMode],
+  )
+  const selectedPath = useMemo<NavigationPath | null>(
+    () =>
+      sortedNavigationPaths.find((path) => path.id === selectedPathId) ??
+      sortedNavigationPaths[0] ??
+      null,
+    [selectedPathId, sortedNavigationPaths],
+  )
+  const pathGraphMaxNodes = useMemo(
+    () => Math.max(...sortedNavigationPaths.map((path) => path.trackIds.length), 0),
+    [sortedNavigationPaths],
+  )
+  const pathGraphWidth = Math.max(460, pathGraphMaxNodes * 150)
+  const pathGraphHeight = Math.max(150, sortedNavigationPaths.length * 92 + 24)
   const formatVisibleKey = useMemo(
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
@@ -179,6 +346,102 @@ function App() {
   const handleChangeKeyMode = (mode: PolarKeyMode) => {
     setPolarKeyMode(mode)
     setSelectedCellId(null)
+  }
+
+  const handlePathWeightChange = (weight: keyof PathFinderWeights, value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        weights: {
+          ...current.weights,
+          [weight]: nextValue,
+        },
+      }),
+    )
+  }
+
+  const handlePathMaxCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxTotalCost: nextValue,
+      }),
+    )
+  }
+
+  const handlePathMaxStepCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxStepCost: nextValue,
+      }),
+    )
+  }
+
+  const handlePathMaxAverageCostChange = (value: string) => {
+    const nextValue = Number(value)
+    if (!Number.isFinite(nextValue)) {
+      return
+    }
+
+    setPathFinderSettings((current) =>
+      clampPathFinderSettings({
+        ...current,
+        maxAverageStepCost: nextValue,
+      }),
+    )
+  }
+
+  const handleSetPathTrack = (target: 'startTrack' | 'endTrack', trackId: string) => {
+    if (!pathTrackLabelById.has(trackId)) {
+      return
+    }
+
+    setPathSelection((current) => ({ ...current, [target]: trackId }))
+  }
+
+  const handleFindPath = () => {
+    const startTrackId = pathTrackLabelById.has(pathSelection.startTrack)
+      ? pathSelection.startTrack
+      : resolveTrackId(pathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
+    const endTrackId = pathTrackLabelById.has(pathSelection.endTrack)
+      ? pathSelection.endTrack
+      : resolveTrackId(pathSelection.endTrack, pathTrackIdByLabel, pathTrackLookup)
+
+    if (!startTrackId || !endTrackId) {
+      setPathSearchStatus('Select valid Start Track and End Track values from the list.')
+      setPathSearchRequest(null)
+      return
+    }
+
+    if (startTrackId === endTrackId) {
+      setPathSearchStatus('Start Track and End Track must be different.')
+      setPathSearchRequest(null)
+      return
+    }
+
+    setPathSearchStatus(null)
+    setPathSearchRequest({
+      startTrackId,
+      endTrackId,
+      settings: clampPathFinderSettings(pathFinderSettings),
+    })
+    setSelectedPathId(null)
   }
 
   const handleOpenDatabase = async () => {
@@ -490,6 +753,371 @@ function App() {
         </article>
       </section>
 
+      <section className="panel insight-panel">
+        <div className="chart-header">
+          <div>
+            <h2>Tracks in Scope</h2>
+            <p>
+              View a list of tracks matching the above filter criteria.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setShowScopeTrackTable((current) => !current)}
+          >
+            {showScopeTrackTable ? 'Hide Track Table' : 'Show Track Table'}
+          </button>
+        </div>
+        {showScopeTrackTable ? (
+          <div className="scope-track-table-wrapper">
+            <table className="scope-track-table">
+              <thead>
+                <tr>
+                  <th>Artist</th>
+                  <th>Title</th>
+                  <th>BPM</th>
+                  <th>Key</th>
+                  <th>In Maps</th>
+                  <th>Path Finder</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pathScopeTracks.map((track) => {
+                  const isInPlots = track.bpm !== null && polarKeySet.has(track.camelotKey)
+                  return (
+                    <tr key={`scope-track:${track.id}`}>
+                      <td>{track.artist}</td>
+                      <td>{track.title}</td>
+                      <td>{track.bpm === null ? 'No BPM' : track.bpm.toFixed(1)}</td>
+                      <td>{formatVisibleKey(track.camelotKey)}</td>
+                      <td>
+                        {isInPlots
+                          ? 'Yes'
+                          : (track.bpm === null ? 'No (missing BPM)' : 'No (hidden by key filter)')}
+                      </td>
+                      <td>
+                        <div className="track-actions">
+                          <button
+                            type="button"
+                            className="secondary-button track-action-button"
+                            aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as start track`}
+                            onClick={() => handleSetPathTrack('startTrack', track.id)}
+                          >
+                            Set as Start Track
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary-button track-action-button"
+                            aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as end track`}
+                            onClick={() => handleSetPathTrack('endTrack', track.id)}
+                          >
+                            Set as End Track
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="panel pathfinder-panel">
+        <div className="chart-header">
+          <div>
+            <h2>Path Finder</h2>
+            <p>
+              Set transition costs to guide route quality between tracks.
+            </p>
+            <p className="path-helper-copy">
+              Costs define how expensive each key or tempo move is. Lower values prefer that move. The
+              search keeps only the 10 best paths under your path limits and runs only when you click Find
+              Path.
+            </p>
+          </div>
+        </div>
+
+        <div className="field-grid">
+          <label>
+            Start Track
+            <input
+              type="search"
+              list="path-start-track-options"
+              value={pathSelection.startTrack}
+              placeholder="Type to filter tracks"
+              onChange={(event) =>
+                setPathSelection((current) => ({ ...current, startTrack: event.target.value }))
+              }
+            />
+          </label>
+          <datalist id="path-start-track-options">
+            {pathTrackOptions.map((option) => (
+              <option key={`path-start-${option.id}`} value={option.label} />
+            ))}
+          </datalist>
+
+          <label>
+            End Track
+            <input
+              type="search"
+              list="path-end-track-options"
+              value={pathSelection.endTrack}
+              placeholder="Type to filter tracks"
+              onChange={(event) =>
+                setPathSelection((current) => ({ ...current, endTrack: event.target.value }))
+              }
+            />
+          </label>
+          <datalist id="path-end-track-options">
+            {pathTrackOptions.map((option) => (
+              <option key={`path-end-${option.id}`} value={option.label} />
+            ))}
+          </datalist>
+
+          <label>
+            Max Total Cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxTotalCost}
+              onChange={(event) => handlePathMaxCostChange(event.target.value)}
+            />
+          </label>
+          <label>
+            Max Transition Cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxStepCost}
+              onChange={(event) => handlePathMaxStepCostChange(event.target.value)}
+            />
+          </label>
+          <label>
+            Max Average Cost
+            <input
+              type="number"
+              step="0.1"
+              value={pathFinderSettings.maxAverageStepCost}
+              onChange={(event) => handlePathMaxAverageCostChange(event.target.value)}
+            />
+          </label>
+          <label>
+            Sort Paths By
+            <select value={pathSortMode} onChange={(event) => setPathSortMode(asPathSortMode(event.target.value))}>
+              {PATH_SORT_MODES.map((mode) => (
+                <option key={mode.value} value={mode.value}>
+                  {mode.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="path-checkbox">
+            <span>Allow Key Change by Tempo</span>
+            <input
+              type="checkbox"
+              checked={pathFinderSettings.allowKeyChangeByTempo}
+              onChange={(event) =>
+                setPathFinderSettings((current) => ({
+                  ...current,
+                  allowKeyChangeByTempo: event.target.checked,
+                }))
+              }
+            />
+          </label>
+        </div>
+        <div className="path-actions">
+          <button type="button" className="primary-button" onClick={handleFindPath}>
+            Find Path
+          </button>
+          {pathSearchStatus ? <p className="path-status">{pathSearchStatus}</p> : null}
+        </div>
+
+        <h4 className="path-section-heading">Transition costs</h4>
+        <div className="field-grid path-weight-grid">
+          {PATH_WEIGHT_FIELDS.map((field) => {
+            const helpText = `${field.description}${
+              field.exampleFrom && field.exampleTo
+                ? ` Example: ${formatVisibleKey(field.exampleFrom)} → ${formatVisibleKey(field.exampleTo)}.`
+                : ` ${field.exampleText ?? ''}`
+            }`
+
+            return (
+              <label key={field.key}>
+                <span className="path-weight-label-row">
+                  <span className="path-weight-label-text">
+                    {formatWeightLabel(field.key, field.label, keyRepresentation)}
+                  </span>
+                  <span
+                    className="path-weight-tooltip"
+                    title={helpText}
+                    aria-label={helpText}
+                    tabIndex={0}
+                  >
+                    ⓘ
+                  </span>
+                </span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={pathFinderSettings.weights[field.key]}
+                  onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
+                />
+              </label>
+            )
+          })}
+        </div>
+
+        {searchedPathSelection ? (
+          sortedNavigationPaths.length > 0 ? (
+          <div className="path-results-grid">
+            <div className="path-graph-wrapper">
+              <svg
+                className="path-graph"
+                viewBox={`0 0 ${pathGraphWidth} ${pathGraphHeight}`}
+                aria-label="Navigation path graph"
+              >
+                {sortedNavigationPaths.map((path, pathIndex) => {
+                  const y = 38 + pathIndex * 92
+                  const stepWidth =
+                    path.trackIds.length <= 1 ? 0 : (pathGraphWidth - 120) / (path.trackIds.length - 1)
+                  const points = path.trackIds
+                    .map((_, index) => `${60 + index * stepWidth},${y}`)
+                    .join(' ')
+                  const isSelected = selectedPath?.id === path.id
+                  const pathAriaLabel = `Select navigation path ${pathIndex + 1}. Total cost ${path.totalCost.toFixed(2)}. Average cost ${getPathAverageCost(path).toFixed(2)}. Maximum transition cost ${getPathMaxStepCost(path).toFixed(2)}.`
+
+                  return (
+                    <g
+                      key={path.id}
+                      className={isSelected ? 'path-graph-row is-selected' : 'path-graph-row'}
+                      role="button"
+                      tabIndex={0}
+                      focusable="true"
+                      aria-label={pathAriaLabel}
+                      aria-pressed={isSelected}
+                      onClick={() => setSelectedPathId(path.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedPathId(path.id)
+                        }
+                      }}
+                    >
+                      <polyline points={points} />
+                      {path.trackIds.map((trackId, nodeIndex) => {
+                        const track = pathTrackLookup.get(trackId)
+                        const x = 60 + nodeIndex * stepWidth
+
+                        return (
+                        <g key={`${path.id}:${nodeIndex}`}>
+                          {track ? (
+                            <title>
+                              {track.artist} - {track.title} (Node {nodeIndex + 1}, Key:{' '}
+                              {formatVisibleKey(track.camelotKey)})
+                            </title>
+                          ) : null}
+                          <circle cx={x} cy={y} r={12} />
+                          <text
+                            x={x}
+                            y={y + 5}
+                            textAnchor="middle"
+                            className="path-graph-node-label"
+                          >
+                            {nodeIndex + 1}
+                          </text>
+                          {track ? (
+                            <text
+                              x={x}
+                              y={y + 26}
+                              textAnchor="middle"
+                              className="path-graph-track-label"
+                            >
+                              <tspan x={x} dy="0" className="path-graph-track-artist">{track.artist}</tspan>
+                              <tspan x={x} dy="1.1em">{track.title}</tspan>
+                            </text>
+                          ) : null}
+                        </g>
+                        )
+                      })}
+                      <text x={10} y={y + 5} className="path-graph-label">
+                        #{pathIndex + 1}
+                      </text>
+                      <text x={pathGraphWidth - 10} y={y - 20} textAnchor="end" className="path-graph-cost">
+                        Tot {path.totalCost.toFixed(2)} · Avg {getPathAverageCost(path).toFixed(2)} · Max{' '}
+                        {getPathMaxStepCost(path).toFixed(2)}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+
+            <ul className="simple-list path-summary-list">
+              {sortedNavigationPaths.map((path, pathIndex) => (
+                <li key={`summary:${path.id}`}>
+                  <button type="button" onClick={() => setSelectedPathId(path.id)}>
+                    <strong>Path #{pathIndex + 1}</strong>
+                    <span>
+                      {path.trackIds.length - 1} transition{path.trackIds.length - 1 === 1 ? '' : 's'}
+                    </span>
+                    <em>
+                      Total {path.totalCost.toFixed(2)} · Avg {getPathAverageCost(path).toFixed(2)} · Max{' '}
+                      {getPathMaxStepCost(path).toFixed(2)}
+                    </em>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {selectedPath ? (
+              <div className="path-details">
+                <p className="insight-subtitle">
+                  Path total: {selectedPath.totalCost.toFixed(2)} across {selectedPath.steps.length} transition
+                  {selectedPath.steps.length === 1 ? '' : 's'}
+                </p>
+                <p className="insight-subtitle">
+                  Path avg/max transition cost: {getPathAverageCost(selectedPath).toFixed(2)} /{' '}
+                  {getPathMaxStepCost(selectedPath).toFixed(2)}
+                </p>
+                <ul className="track-list">
+                  {selectedPath.steps.map((step, index) => {
+                    const fromTrack = pathTrackLookup.get(step.fromTrackId)
+                    const toTrack = pathTrackLookup.get(step.toTrackId)
+                    return (
+                      <li key={`${selectedPath.id}:${step.fromTrackId}:${step.toTrackId}:${index}`}>
+                        <div className="track-title">
+                          <strong>Transition {index + 1}</strong>
+                          <span>
+                            {fromTrack ? formatTrackLabel(fromTrack) : step.fromTrackId} →{' '}
+                            {toTrack ? formatTrackLabel(toTrack) : step.toTrackId}
+                          </span>
+                        </div>
+                        <div className="track-meta">
+                          <span>{formatPathStepSummary(step, formatVisibleKey)}</span>
+                          <span>{step.stepCost.toFixed(2)} cost</span>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          ) : (
+          <p className="placeholder-text">
+            No path found for the selected tracks and max total cost. Increase Max Total Cost or adjust
+            costs, then click Find Path again.
+          </p>
+          )
+        ) : (
+          <p className="placeholder-text">Pick Start Track and End Track, then click Find Path.</p>
+        )}
+      </section>
+
       <section className="visual-grid">
         <article className="panel chart-panel">
           <div className="chart-header">
@@ -596,9 +1224,25 @@ function App() {
                         <span>{track.title}</span>
                       </div>
                       <div className="track-meta">
-                        <span>{track.bpm ? `${track.bpm.toFixed(1)} BPM` : 'No BPM'}</span>
+                        <span>{track.bpm === null ? 'No BPM' : `${track.bpm.toFixed(1)} BPM`}</span>
                         <span>{formatVisibleKey(track.camelotKey)}</span>
                         <span>{formatRating(track)}</span>
+                      </div>
+                      <div className="track-actions">
+                        <button
+                          type="button"
+                          className="secondary-button track-action-button"
+                          onClick={() => handleSetPathTrack('startTrack', track.id)}
+                        >
+                          Set as Start Track
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button track-action-button"
+                          onClick={() => handleSetPathTrack('endTrack', track.id)}
+                        >
+                          Set as End Track
+                        </button>
                       </div>
                     </li>
                   ))
@@ -743,6 +1387,159 @@ function formatKeyRepresentationLabel(representation: KeyRepresentation): string
   }
 }
 
+function formatTrackLabel(track: TrackRecord): string {
+  return `${track.artist} — ${track.title}`
+}
+
+function formatTrackSearchLabel(track: TrackRecord, keyRepresentation: KeyRepresentation): string {
+  const key = formatKey(track.camelotKey, keyRepresentation)
+  const bpmLabel = track.bpm === null ? 'No BPM' : `${track.bpm.toFixed(1)} BPM`
+  return `${track.artist} — ${track.title} (${key}, ${bpmLabel})`
+}
+
+function formatWeightLabel(
+  weight: keyof PathFinderWeights,
+  fallbackLabel: string,
+  keyRepresentation: KeyRepresentation,
+): string {
+  if (keyRepresentation === 'musical') {
+    switch (weight) {
+      case 'oneUp':
+        return 'One 5th up'
+      case 'oneDown':
+        return 'One 5th down'
+      case 'aToB':
+        return 'min → rel maj'
+      case 'bToA':
+        return 'maj → rel min'
+      case 'energyBoost':
+        return 'min → maj'
+      case 'energyDrop':
+        return 'maj → min'
+      default:
+        return fallbackLabel
+    }
+  }
+
+  const minorLabel = getRepresentationMinorLabel(keyRepresentation)
+  const majorLabel = getRepresentationMajorLabel(keyRepresentation)
+
+  switch (weight) {
+    case 'aToB':
+      return `${minorLabel} → ${majorLabel}`
+    case 'bToA':
+      return `${majorLabel} → ${minorLabel}`
+    case 'energyBoost':
+      return `x${minorLabel} → (x+3)${majorLabel}`
+    case 'energyDrop':
+      return `x${majorLabel} → (x-3)${minorLabel}`
+    default:
+      return fallbackLabel
+  }
+}
+
+function formatPathStepSummary(
+  step: NavigationPath['steps'][number],
+  formatVisibleKey: (camelotKey: string) => string,
+): string {
+  const parts = [
+    `${formatVisibleKey(step.fromKey)} ${step.fromBpm.toFixed(1)} → ${formatVisibleKey(step.toKey)} ${step.toBpm.toFixed(1)} BPM`,
+    `${formatPathRule(step.keyRule)} (${step.keyCost.toFixed(2)})`,
+    `tempo ${step.tempoPercentDelta.toFixed(2)}% (${step.tempoCost.toFixed(2)})`,
+  ]
+
+  if (step.adjustment !== 'none') {
+    parts.push(`${formatTempoAdjustment(step.adjustment)} (${step.adjustmentCost.toFixed(2)})`)
+  }
+
+  return parts.join(' · ')
+}
+
+function formatPathRule(rule: keyof PathFinderWeights): string {
+  switch (rule) {
+    case 'sameKey':
+      return 'Same Key'
+    case 'oneUp':
+      return 'One Up'
+    case 'oneDown':
+      return 'One Down'
+    case 'aToB':
+      return 'A→B'
+    case 'bToA':
+      return 'B→A'
+    case 'energyBoost':
+      return 'xA→(x+3)B'
+    case 'energyDrop':
+      return 'xB→(x-3)A'
+    case 'centerJump':
+      return 'Center Jump'
+    case 'tempoPercent':
+      return 'Tempo'
+    case 'keyChangeByTempo':
+      return 'Tempo Key Change'
+    default:
+      return rule
+  }
+}
+
+function formatTempoAdjustment(adjustment: NavigationPath['steps'][number]['adjustment']): string {
+  if (adjustment === 'speed-up') {
+    return 'Speed Up'
+  }
+
+  if (adjustment === 'slow-down') {
+    return 'Slow Down'
+  }
+
+  return 'No Adjustment'
+}
+
+function resolveTrackId(
+  value: string,
+  pathTrackIdByLabel: Map<string, string>,
+  pathTrackLookup: Map<string, TrackRecord>,
+): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  const byLabel = pathTrackIdByLabel.get(trimmed.toLowerCase())
+  if (byLabel) {
+    return byLabel
+  }
+
+  return pathTrackLookup.has(trimmed) ? trimmed : null
+}
+
+function getPathAverageCost(path: NavigationPath): number {
+  if (path.steps.length === 0) {
+    return 0
+  }
+
+  return path.totalCost / path.steps.length
+}
+
+function getPathMaxStepCost(path: NavigationPath): number {
+  return path.steps.reduce((max, step) => Math.max(max, step.stepCost), 0)
+}
+
+function getPathSortMetric(path: NavigationPath, mode: PathSortMode): number {
+  if (mode === 'average') {
+    return getPathAverageCost(path)
+  }
+
+  if (mode === 'max') {
+    return getPathMaxStepCost(path)
+  }
+
+  return path.totalCost
+}
+
+function asPathSortMode(value: string): PathSortMode {
+  return PATH_SORT_MODES.some((mode) => mode.value === value) ? (value as PathSortMode) : 'total'
+}
+
 function asKeyRepresentation(value: string): KeyRepresentation {
   return KEY_REPRESENTATIONS.includes(value as KeyRepresentation)
     ? (value as KeyRepresentation)
@@ -758,6 +1555,31 @@ function getInitialKeyRepresentation(): KeyRepresentation {
     return asKeyRepresentation(window.localStorage.getItem(KEY_REPRESENTATION_STORAGE_KEY) ?? '')
   } catch {
     return 'camelot'
+  }
+}
+
+function getInitialPathFinderSettings(): PathFinderSettings {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PATH_FINDER_SETTINGS
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PATH_FINDER_SETTINGS_STORAGE_KEY)
+    if (!raw) {
+      return DEFAULT_PATH_FINDER_SETTINGS
+    }
+
+    const parsed = JSON.parse(raw)
+    return clampPathFinderSettings({
+      ...DEFAULT_PATH_FINDER_SETTINGS,
+      ...parsed,
+      weights: {
+        ...DEFAULT_PATH_FINDER_SETTINGS.weights,
+        ...(parsed as { weights?: Partial<PathFinderWeights> }).weights,
+      },
+    })
+  } catch {
+    return DEFAULT_PATH_FINDER_SETTINGS
   }
 }
 

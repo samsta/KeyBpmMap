@@ -111,6 +111,50 @@ const tracks: TrackRecord[] = [
     path: '/mock/sunrise-draft.wav',
     playlists: ['p-3'],
   },
+  {
+    id: 't-011',
+    title: 'Arc Signal',
+    artist: 'Mara Tone',
+    bpm: 121,
+    rating: 4,
+    camelotKey: '8A',
+    rawKey: null,
+    path: '/mock/arc-signal.wav',
+    playlists: ['p-4'],
+  },
+  {
+    id: 't-012',
+    title: 'Delta Lift',
+    artist: 'Mara Tone',
+    bpm: 122,
+    rating: 4,
+    camelotKey: '9A',
+    rawKey: null,
+    path: '/mock/delta-lift.wav',
+    playlists: ['p-4'],
+  },
+  {
+    id: 't-013',
+    title: 'Mirror Rail',
+    artist: 'Mara Tone',
+    bpm: 123,
+    rating: 4,
+    camelotKey: '9B',
+    rawKey: null,
+    path: '/mock/mirror-rail.wav',
+    playlists: ['p-4'],
+  },
+  {
+    id: 't-014',
+    title: 'Copper Dawn',
+    artist: 'Mara Tone',
+    bpm: 124,
+    rating: 4,
+    camelotKey: '10B',
+    rawKey: null,
+    path: '/mock/copper-dawn.wav',
+    playlists: ['p-4'],
+  },
 ]
 
 const playlists: PlaylistInfo[] = [
@@ -128,6 +172,11 @@ const playlists: PlaylistInfo[] = [
     id: 'p-3',
     name: 'Warm-up bridge',
     trackIds: ['t-009', 't-010', 't-003', 't-004'],
+  },
+  {
+    id: 'p-4',
+    name: 'Path finder lane',
+    trackIds: ['t-001', 't-011', 't-012', 't-013', 't-014'],
   },
 ]
 
