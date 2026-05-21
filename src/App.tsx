@@ -496,8 +496,8 @@ function App() {
             <div>
               <h2>Polar harmonic density map</h2>
               <p>
-                Camelot {formatKeyModeDescription(polarKeyMode)} wedges outside-in by {bpmBandSize}{' '}
-                BPM ring.
+                {formatKeyModeDescription(polarKeyMode, keyRepresentation)} wedges outside-in by{' '}
+                {bpmBandSize} BPM ring.
               </p>
               <p>Showing {formatKeyRepresentationLabel(keyRepresentation).toLowerCase()} labels.</p>
             </div>
@@ -510,7 +510,7 @@ function App() {
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
                     onClick={() => handleChangeKeyMode(mode)}
                   >
-                    {formatKeyModeButtonLabel(mode)}
+                    {formatKeyModeButtonLabel(mode, keyRepresentation)}
                   </button>
                 ))}
               </div>
@@ -539,8 +539,8 @@ function App() {
             <div>
               <h2>BPM versus key heatmap</h2>
               <p>
-                Quick comparison of dense and empty harmonic/tempo cells for Camelot{' '}
-                {formatKeyModeDescription(polarKeyMode)} keys.
+                Quick comparison of dense and empty harmonic/tempo cells for{' '}
+                {formatKeyModeDescription(polarKeyMode, keyRepresentation)} keys.
               </p>
               <p>Showing {formatKeyRepresentationLabel(keyRepresentation).toLowerCase()} labels.</p>
             </div>
@@ -553,7 +553,7 @@ function App() {
                     className={mode === polarKeyMode ? 'segment-button is-active' : 'segment-button'}
                     onClick={() => handleChangeKeyMode(mode)}
                   >
-                    {formatKeyModeButtonLabel(mode)}
+                    {formatKeyModeButtonLabel(mode, keyRepresentation)}
                   </button>
                 ))}
               </div>
@@ -687,12 +687,48 @@ function getSparseCellStatus(cell: SparseCellSummary): string {
   return cell.cellCount === 1 ? '1 track' : '1 track each'
 }
 
-function formatKeyModeButtonLabel(mode: PolarKeyMode): string {
-  return mode === 'both' ? 'A + B' : `${mode} only`
+function formatKeyModeButtonLabel(mode: PolarKeyMode, representation: KeyRepresentation): string {
+  const minorLabel = getRepresentationMinorLabel(representation)
+  const majorLabel = getRepresentationMajorLabel(representation)
+  if (mode === 'both') {
+    return `${minorLabel} + ${majorLabel}`
+  }
+
+  return mode === 'A' ? `${minorLabel} only` : `${majorLabel} only`
 }
 
-function formatKeyModeDescription(mode: PolarKeyMode): string {
-  return mode === 'both' ? 'A/B-side' : `${mode}-side`
+function formatKeyModeDescription(mode: PolarKeyMode, representation: KeyRepresentation): string {
+  const minorLabel = getRepresentationMinorLabel(representation)
+  const majorLabel = getRepresentationMajorLabel(representation)
+  if (mode === 'both') {
+    return `${minorLabel}/${majorLabel}`
+  }
+
+  return mode === 'A' ? `${minorLabel}` : `${majorLabel}`
+}
+
+function getRepresentationMinorLabel(representation: KeyRepresentation): string {
+  switch (representation) {
+    case 'open-key':
+      return 'm'
+    case 'musical':
+      return 'min'
+    case 'camelot':
+    default:
+      return 'A'
+  }
+}
+
+function getRepresentationMajorLabel(representation: KeyRepresentation): string {
+  switch (representation) {
+    case 'open-key':
+      return 'd'
+    case 'musical':
+      return 'maj'
+    case 'camelot':
+    default:
+      return 'B'
+  }
 }
 
 function formatKeyRepresentationLabel(representation: KeyRepresentation): string {
