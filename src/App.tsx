@@ -408,17 +408,20 @@ function App() {
   }
 
   const handleSetPathTrack = (target: 'startTrack' | 'endTrack', trackId: string) => {
-    const label = pathTrackLabelById.get(trackId)
-    if (!label) {
+    if (!pathTrackLabelById.has(trackId)) {
       return
     }
 
-    setPathSelection((current) => ({ ...current, [target]: label }))
+    setPathSelection((current) => ({ ...current, [target]: trackId }))
   }
 
   const handleFindPath = () => {
-    const startTrackId = resolveTrackId(pathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
-    const endTrackId = resolveTrackId(pathSelection.endTrack, pathTrackIdByLabel, pathTrackLookup)
+    const startTrackId = pathTrackLabelById.has(pathSelection.startTrack)
+      ? pathSelection.startTrack
+      : resolveTrackId(pathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
+    const endTrackId = pathTrackLabelById.has(pathSelection.endTrack)
+      ? pathSelection.endTrack
+      : resolveTrackId(pathSelection.endTrack, pathTrackIdByLabel, pathTrackLookup)
 
     if (!startTrackId || !endTrackId) {
       setPathSearchStatus('Select valid Start Track and End Track values from the list.')
