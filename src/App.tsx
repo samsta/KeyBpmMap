@@ -940,7 +940,9 @@ function App() {
         <div className="field-grid path-weight-grid">
           {PATH_WEIGHT_FIELDS.map((field) => (
             <label key={field.key}>
-              {formatWeightLabel(field.key, field.label, keyRepresentation)}
+              <span className="path-weight-label-text">
+                {formatWeightLabel(field.key, field.label, keyRepresentation)}
+              </span>
               <input
                 type="number"
                 step="0.1"

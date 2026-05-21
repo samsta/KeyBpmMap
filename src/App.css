@@ -268,6 +268,15 @@ input[type='checkbox'] {
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
 }
 
+.path-weight-grid label {
+  grid-template-rows: minmax(2.5em, auto) min-content auto;
+}
+
+.path-weight-label-text {
+  display: block;
+  line-height: 1.25;
+}
+
 .pathfinder-panel input[type='number'],
 .pathfinder-panel input[type='search'],
 .pathfinder-panel select {
