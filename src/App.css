@@ -262,6 +262,12 @@ select {
   gap: 8px;
 }
 
+.track-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
 .track-list strong,
 .simple-list strong,
 .source-panel strong {

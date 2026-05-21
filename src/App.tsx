@@ -514,7 +514,7 @@ function App() {
                 {selectedCell.tracks.length > 0 ? (
                   selectedCell.tracks.map((track) => (
                     <li key={track.id}>
-                      <div>
+                      <div className="track-title">
                         <strong>{track.artist}</strong>
                         <span>{track.title}</span>
                       </div>
