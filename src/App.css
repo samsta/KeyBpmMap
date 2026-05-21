@@ -38,6 +38,25 @@
   max-width: 68rem;
 }
 
+.platform-instructions {
+  display: grid;
+  gap: 12px 0;
+  margin: 16px 0 0;
+  max-width: 68rem;
+}
+
+.platform-instructions dt {
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-top: 8px;
+}
+
+.platform-instructions dd {
+  margin: 2px 0 0 16px;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
