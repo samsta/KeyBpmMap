@@ -11,7 +11,6 @@ import {
   MAX_BPM_BAND_SIZE,
   MIN_BPM_BAND_SIZE,
   summarizeTracks,
-  summarizeTransitions,
 } from './lib/analysis'
 import { CAMELOT_KEYS } from './lib/camelot'
 import { loadEngineDjLibrary } from './lib/engineDj'
@@ -99,27 +98,6 @@ function App() {
     })
   }, [filters, library.tracks, playlistLookup])
 
-  const filteredTrackIds = useMemo(
-    () => new Set(filteredTracks.map((track) => track.id)),
-    [filteredTracks],
-  )
-
-  const filteredTransitions = useMemo(() => {
-    return library.transitions.filter((transition) => {
-      if (
-        filters.playlistId !== 'all' &&
-        transition.playlistId !== filters.playlistId
-      ) {
-        return false
-      }
-
-      return (
-        filteredTrackIds.has(transition.fromTrackId) &&
-        filteredTrackIds.has(transition.toTrackId)
-      )
-    })
-  }, [filteredTrackIds, filters.playlistId, library.transitions])
-
   const bpmBands = useMemo(
     () => createBpmBands(filteredTracks, bpmBandSize),
     [bpmBandSize, filteredTracks],
@@ -146,10 +124,6 @@ function App() {
   )
   const summary = useMemo(() => summarizeTracks(filteredTracks), [filteredTracks])
   const sparseCells = useMemo(() => findSparseCells(densityCells, bpmBands), [bpmBands, densityCells])
-  const topTransitions = useMemo(
-    () => summarizeTransitions(filteredTransitions),
-    [filteredTransitions],
-  )
 
   const handleLoadMockData = () => {
     setLibrary(createMockLibrary())
@@ -254,7 +228,7 @@ function App() {
           <h1>See where your key and BPM density actually lives.</h1>
           <p className="lede">
             Load a local Engine DJ SQLite database in the browser, inspect harmonic and
-            tempo hotspots, and drill into sparse areas or playlist transitions without
+            tempo hotspots, and drill into sparse areas without
             uploading your library anywhere. Engine DJ usually stores it at
             {' '}
             <code aria-label="Example macOS Engine DJ database path">
@@ -598,23 +572,6 @@ function App() {
           )}
         </article>
 
-        <article className="panel insight-panel">
-          <h2>Top playlist transitions</h2>
-          <ul className="simple-list">
-            {topTransitions.length > 0 ? (
-              topTransitions.map((transition) => (
-                <li key={transition.id}>
-                  <div>
-                    <strong>{transition.label}</strong>
-                    <span>{transition.count} chained mix points</span>
-                  </div>
-                </li>
-              ))
-            ) : (
-              <li>No playlist transitions remain after the current filters.</li>
-            )}
-          </ul>
-        </article>
       </section>
     </main>
   )
