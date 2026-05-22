@@ -55,8 +55,10 @@ function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): v
   })
 }
 
+const IGNORED_CSS_KEYWORDS = ['initial', 'inherit', 'unset'] as const
+
 function setAttributeIfValue(node: Element, attribute: string, value: string): void {
-  if (!value || value === 'initial' || value === 'inherit' || value === 'unset') {
+  if (!value || IGNORED_CSS_KEYWORDS.includes(value as (typeof IGNORED_CSS_KEYWORDS)[number])) {
     return
   }
 
