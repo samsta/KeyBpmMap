@@ -591,6 +591,31 @@ input[type='checkbox'] {
   color: #cbd5e1;
 }
 
+.selected-region-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-region-sort-button {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  padding: 0.25rem 0.52rem;
+  font: inherit;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.selected-region-sort-button:hover,
+.selected-region-sort-button:focus-visible {
+  color: #cbd5e1;
+}
+
 .scope-track-table tbody td {
   color: #cbd5e1;
 }
