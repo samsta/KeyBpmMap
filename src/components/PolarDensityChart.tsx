@@ -123,6 +123,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
           {keys.map((camelotKey, index) => {
             const angle = ((index + 0.5) / keys.length) * Math.PI * 2 - Math.PI / 2
             const labelRadius = outerRadius + 24
+            // D3 arc angles are measured from 12 o'clock clockwise, so convert to SVG x/y accordingly.
             const x = Math.sin(angle) * labelRadius
             const y = -Math.cos(angle) * labelRadius
 
