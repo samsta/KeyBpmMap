@@ -9,7 +9,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '4A',
     rawKey: null,
-    path: '/mock/night-notes.wav',
+    path: 'https://skonoks.bandcamp.com/track/night-notes',
     playlists: ['p-1'],
   },
   {
@@ -20,7 +20,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '4A',
     rawKey: null,
-    path: '/mock/another-round-jay-strata-rmx.wav',
+    path: 'https://skonoks.bandcamp.com/track/another-round-jay-strata-rmx',
     playlists: ['p-1'],
   },
   {
@@ -31,18 +31,18 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '4A',
     rawKey: null,
-    path: '/mock/til-i-get-you-skonoks-remix.wav',
+    path: 'https://soundcloud.com/skonoks/til-i-get-you-skonoks-remix',
     playlists: ['p-1', 'p-3'],
   },
   {
     id: 't-004',
-    title: '5 Carnian Pluvial Episode (DX-9 under water rmx)',
+    title: 'Carnian Pluvial Episode (DX-9 under water rmx)',
     artist: 'Skonoks',
     bpm: 127,
     rating: 3,
     camelotKey: '5A',
     rawKey: null,
-    path: '/mock/5-carnian-pluvial-episode-dx-9-under-water-rmx.wav',
+    path: 'https://skonoks.bandcamp.com/track/carnian-pluvial-episode-dx-9-underwater-rmx',
     playlists: ['p-1'],
   },
   {
@@ -53,7 +53,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '5A',
     rawKey: null,
-    path: '/mock/another-round-skonoks-4-4-mix.wav',
+    path: 'https://skonoks.bandcamp.com/track/another-round-skonoks-4-4-mix',
     playlists: ['p-1'],
   },
   {
@@ -64,7 +64,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '6A',
     rawKey: null,
-    path: '/mock/warm-embrace.wav',
+    path: 'https://skonoks.bandcamp.com/track/warm-embrace',
     playlists: ['p-1'],
   },
   {
@@ -75,7 +75,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '6A',
     rawKey: null,
-    path: '/mock/crystals.wav',
+    path: 'https://skonoks.bandcamp.com/track/crystals',
     playlists: ['p-1'],
   },
   {
@@ -86,7 +86,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '7B',
     rawKey: null,
-    path: '/mock/scatter-plot.wav',
+    path: 'https://skonoks.bandcamp.com/track/scatter-plot',
     playlists: ['p-1'],
   },
   {
@@ -97,7 +97,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '8A',
     rawKey: null,
-    path: '/mock/oh-hey.wav',
+    path: 'https://soundcloud.com/skonoks/oh-hey-original-mix',
     playlists: ['p-1', 'p-3'],
   },
   {
@@ -108,7 +108,7 @@ const tracks: TrackRecord[] = [
     rating: null,
     camelotKey: '12A',
     rawKey: null,
-    path: '/mock/fours.wav',
+    path: 'https://skonoks.bandcamp.com/track/fours',
     playlists: ['p-1', 'p-4'],
   },
   {
@@ -119,7 +119,7 @@ const tracks: TrackRecord[] = [
     rating: null,
     camelotKey: '12A',
     rawKey: null,
-    path: '/mock/threes.wav',
+    path: 'https://skonoks.bandcamp.com/track/threes',
     playlists: ['p-1', 'p-4'],
   },
   {
@@ -130,7 +130,7 @@ const tracks: TrackRecord[] = [
     rating: null,
     camelotKey: '6A',
     rawKey: null,
-    path: '/mock/out-there.wav',
+    path: 'https://skonoks.bandcamp.com/track/out-there',
     playlists: ['p-1'],
   },
   {
@@ -141,7 +141,7 @@ const tracks: TrackRecord[] = [
     rating: null,
     camelotKey: '3A',
     rawKey: null,
-    path: '/mock/pocket-riot.wav',
+    path: 'https://skonoks.bandcamp.com/track/pocket-riot',
     playlists: ['p-1'],
   },
   {
@@ -152,7 +152,7 @@ const tracks: TrackRecord[] = [
     rating: null,
     camelotKey: '7A',
     rawKey: null,
-    path: '/mock/crossing-the-valley.wav',
+    path: 'https://skonoks.bandcamp.com/track/crossing-the-valley',
     playlists: ['p-1'],
   },
   {
@@ -163,7 +163,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '12A',
     rawKey: null,
-    path: '/mock/baseline-test.wav',
+    path: 'https://skonoks.bandcamp.com/track/baseline-test',
     playlists: ['p-2'],
   },
   {
@@ -174,7 +174,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '5A',
     rawKey: null,
-    path: '/mock/supercritical.aiff',
+    path: 'https://skonoks.bandcamp.com/track/supercritical',
     playlists: ['p-2'],
   },
   {
@@ -185,7 +185,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '6A',
     rawKey: null,
-    path: '/mock/that-dot-thats-us.aiff',
+    path: 'https://skonoks.bandcamp.com/track/that-dot-thats-us',
     playlists: ['p-2'],
   },
   {
@@ -196,7 +196,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '9A',
     rawKey: null,
-    path: '/mock/see-what-comes.aiff',
+    path: 'https://skonoks.bandcamp.com/track/see-what-comes',
     playlists: ['p-2', 'p-5'],
   },
   {
@@ -207,7 +207,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '10A',
     rawKey: null,
-    path: '/mock/ascending-glow.aiff',
+    path: 'https://skonoks.bandcamp.com/track/ascending-glow',
     playlists: ['p-2'],
   },
   {
@@ -218,7 +218,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '3B',
     rawKey: null,
-    path: '/mock/try-me.aiff',
+    path: 'https://skonoks.bandcamp.com/track/try-me',
     playlists: ['p-2'],
   },
   {
@@ -229,7 +229,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '8B',
     rawKey: null,
-    path: '/mock/tapa-ono.aiff',
+    path: 'https://skonoks.bandcamp.com/track/tapa-ono',
     playlists: ['p-2'],
   },
   {
@@ -240,7 +240,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '5A',
     rawKey: null,
-    path: '/mock/resonating-fabric.aiff',
+    path: 'https://skonoks.bandcamp.com/track/resonating-fabric',
     playlists: ['p-2'],
   },
   {
@@ -251,7 +251,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '5A',
     rawKey: null,
-    path: '/mock/flyswatter-2025.aiff',
+    path: 'https://skonoks.bandcamp.com/track/flyswatter-2025',
     playlists: ['p-2'],
   },
   {
@@ -262,7 +262,7 @@ const tracks: TrackRecord[] = [
     rating: 3,
     camelotKey: '6A',
     rawKey: null,
-    path: '/mock/machine-without-purpose.aiff',
+    path: 'https://skonoks.bandcamp.com/track/machine-without-purpose',
     playlists: ['p-2'],
   },
 ]

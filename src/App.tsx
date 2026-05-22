@@ -588,10 +588,10 @@ function App() {
           <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
           <li>Reads Rekordbox XML exports locally in the browser.</li>
           <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
-          <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
+          <li>Exports both charts as PNG snapshots.</li>
         </ul>
-
         <div className="hero-social-links" aria-label="Skonoks links">
+          Find my music and socials:
           <a
             href="https://soundcloud.com/skonoks"
             className="hero-social-link"
@@ -621,6 +621,16 @@ function App() {
             title="BeatPort"
           >
             <img src="social/beatport.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://music.apple.com/us/artist/skonoks/1688551885"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Apple Music"
+            title="Apple Music"
+          >
+            <img src="social/apple-music.png" alt="" aria-hidden="true" />
           </a>
           <a
             href="https://tidal.com/@skonoks"

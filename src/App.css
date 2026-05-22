@@ -69,6 +69,7 @@
   display: grid;
   gap: 8px;
   color: #cbd5e1;
+  font-size: 0.7rem;
 }
 
 .hero-social-links {
@@ -79,14 +80,14 @@
 }
 
 .hero-social-link {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  background: rgba(15, 23, 42, 0.55);
+  border: 0px;
+  background: radial-gradient(circle, #ffffff3b 0%, #ffffff00 80%);
   opacity: 0.9;
   transition:
     transform 120ms ease,
@@ -99,13 +100,12 @@
 .hero-social-link:focus-visible {
   transform: translateY(-1px);
   opacity: 1;
-  border-color: rgba(34, 211, 238, 0.55);
-  background: rgba(30, 41, 59, 0.8);
+  background: radial-gradient(circle, #7300ff3b 0%, #00a6ff41 80%);
 }
 
 .hero-social-link img {
-  width: 16px;
-  height: 16px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
 }
 
