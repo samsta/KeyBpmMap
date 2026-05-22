@@ -48,9 +48,9 @@ function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): v
   }
   const pairCount = Math.min(sourceTextNodes.length, targetTextNodes.length)
 
-  for (let index = 0; index < pairCount; index += 1) {
-    const sourceTextNode = sourceTextNodes[index]
-    const targetTextNode = targetTextNodes[index]
+  for (let textNodeIndex = 0; textNodeIndex < pairCount; textNodeIndex += 1) {
+    const sourceTextNode = sourceTextNodes[textNodeIndex]
+    const targetTextNode = targetTextNodes[textNodeIndex]
     const computedStyle = getComputedStyle(sourceTextNode)
     setAttributeIfValue(targetTextNode, 'fill', computedStyle.fill)
     setAttributeIfValue(targetTextNode, 'font-family', computedStyle.fontFamily)
