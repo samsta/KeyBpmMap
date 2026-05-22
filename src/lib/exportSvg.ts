@@ -2,8 +2,10 @@ export async function downloadSvgAsPng(
   svgElement: SVGSVGElement,
   fileName: string,
 ): Promise<void> {
+  const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+  inlineTextStyles(svgElement, clonedSvg)
   const serializer = new XMLSerializer()
-  const source = serializer.serializeToString(svgElement)
+  const source = serializer.serializeToString(clonedSvg)
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
 
@@ -33,6 +35,38 @@ export async function downloadSvgAsPng(
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): void {
+  const sourceTextNodes = sourceSvg.querySelectorAll('text')
+  const targetTextNodes = targetSvg.querySelectorAll('text')
+  if (sourceTextNodes.length !== targetTextNodes.length) {
+    console.warn('SVG export text node mismatch.', {
+      sourceCount: sourceTextNodes.length,
+      targetCount: targetTextNodes.length,
+    })
+  }
+  const pairCount = Math.min(sourceTextNodes.length, targetTextNodes.length)
+
+  for (let textNodeIndex = 0; textNodeIndex < pairCount; textNodeIndex += 1) {
+    const sourceTextNode = sourceTextNodes[textNodeIndex]
+    const targetTextNode = targetTextNodes[textNodeIndex]
+    const computedStyle = getComputedStyle(sourceTextNode)
+    setAttributeIfValue(targetTextNode, 'fill', computedStyle.fill)
+    setAttributeIfValue(targetTextNode, 'font-family', computedStyle.fontFamily)
+    setAttributeIfValue(targetTextNode, 'font-size', computedStyle.fontSize)
+    setAttributeIfValue(targetTextNode, 'font-weight', computedStyle.fontWeight)
+  }
+}
+
+const IGNORED_CSS_KEYWORDS = new Set(['initial', 'inherit', 'unset'])
+
+function setAttributeIfValue(node: Element, attribute: string, value: string): void {
+  if (!value || IGNORED_CSS_KEYWORDS.has(value)) {
+    return
+  }
+
+  node.setAttribute(attribute, value)
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {

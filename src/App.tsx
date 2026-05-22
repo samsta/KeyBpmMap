@@ -50,6 +50,10 @@ interface OpenFilePickerConfig {
 
 type PolarKeyMode = 'both' | 'A' | 'B'
 type PathSortMode = 'total' | 'average' | 'max'
+type ScopeTrackSortKey = 'artist' | 'title' | 'bpm' | 'key' | 'inMaps'
+type ScopeTrackSortDirection = 'asc' | 'desc'
+type SelectedRegionSortKey = 'artist' | 'title' | 'bpm'
+type SelectedRegionSortDirection = 'asc' | 'desc'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
 const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
   { value: 'total', label: 'Total Cost' },
@@ -128,6 +132,20 @@ function App() {
   const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
   const [pathSortMode, setPathSortMode] = useState<PathSortMode>('total')
+  const [scopeTrackSort, setScopeTrackSort] = useState<{
+    key: ScopeTrackSortKey
+    direction: ScopeTrackSortDirection
+  }>({
+    key: 'artist',
+    direction: 'asc',
+  })
+  const [selectedRegionSort, setSelectedRegionSort] = useState<{
+    key: SelectedRegionSortKey
+    direction: SelectedRegionSortDirection
+  }>({
+    key: 'artist',
+    direction: 'asc',
+  })
   const [showScopeTrackTable, setShowScopeTrackTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
@@ -309,6 +327,123 @@ function App() {
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
   )
+  const sortedScopeTrackRows = useMemo(() => {
+    const compareInMapsRank = (track: TrackRecord) => {
+      if (track.bpm !== null && polarKeySet.has(track.camelotKey)) {
+        return 0
+      }
+      if (track.bpm === null) {
+        return 2
+      }
+      return 1
+    }
+
+    return [...pathScopeTracks].sort((left, right) => {
+      const directionFactor = scopeTrackSort.direction === 'asc' ? 1 : -1
+      let comparison = 0
+
+      switch (scopeTrackSort.key) {
+        case 'artist':
+          comparison = left.artist.localeCompare(right.artist) * directionFactor
+          break
+        case 'title':
+          comparison = left.title.localeCompare(right.title) * directionFactor
+          break
+        case 'bpm':
+          comparison = compareNullableNumber(left.bpm, right.bpm, scopeTrackSort.direction)
+          break
+        case 'key':
+          comparison = compareCamelotKeys(left.camelotKey, right.camelotKey, scopeTrackSort.direction)
+          break
+        case 'inMaps':
+          comparison = (compareInMapsRank(left) - compareInMapsRank(right)) * directionFactor
+          break
+      }
+
+      if (comparison !== 0) {
+        return comparison
+      }
+
+      return (
+        left.artist.localeCompare(right.artist) ||
+        left.title.localeCompare(right.title) ||
+        left.id.localeCompare(right.id)
+      )
+    })
+  }, [pathScopeTracks, polarKeySet, scopeTrackSort])
+
+  const handleScopeTrackSort = (key: ScopeTrackSortKey) => {
+    setScopeTrackSort((current) =>
+      current.key === key
+        ? {
+            key,
+            direction: current.direction === 'asc' ? 'desc' : 'asc',
+          }
+        : {
+            key,
+            direction: 'asc',
+          },
+    )
+  }
+
+  const getScopeTrackSortIndicator = (key: ScopeTrackSortKey) => {
+    if (scopeTrackSort.key !== key) {
+      return '↕'
+    }
+    return scopeTrackSort.direction === 'asc' ? '↑' : '↓'
+  }
+  const sortedSelectedRegionTracks = useMemo(() => {
+    if (!selectedCell) {
+      return []
+    }
+
+    return [...selectedCell.tracks].sort((left, right) => {
+      const directionFactor = selectedRegionSort.direction === 'asc' ? 1 : -1
+
+      switch (selectedRegionSort.key) {
+        case 'artist':
+          return (
+            left.artist.localeCompare(right.artist) * directionFactor ||
+            left.title.localeCompare(right.title) ||
+            left.id.localeCompare(right.id)
+          )
+        case 'title':
+          return (
+            left.title.localeCompare(right.title) * directionFactor ||
+            left.artist.localeCompare(right.artist) ||
+            left.id.localeCompare(right.id)
+          )
+        case 'bpm':
+          return (
+            compareNullableNumber(left.bpm, right.bpm, selectedRegionSort.direction) ||
+            left.artist.localeCompare(right.artist) ||
+            left.title.localeCompare(right.title) ||
+            left.id.localeCompare(right.id)
+          )
+      }
+    })
+  }, [selectedCell, selectedRegionSort])
+
+  const handleSelectedRegionSort = (key: SelectedRegionSortKey) => {
+    setSelectedRegionSort((current) =>
+      current.key === key
+        ? {
+            key,
+            direction: current.direction === 'asc' ? 'desc' : 'asc',
+          }
+        : {
+            key,
+            direction: 'asc',
+          },
+    )
+  }
+
+  const getSelectedRegionSortIndicator = (key: SelectedRegionSortKey) => {
+    if (selectedRegionSort.key !== key) {
+      return '↕'
+    }
+    return selectedRegionSort.direction === 'asc' ? '↑' : '↓'
+  }
 
   const handleLoadMockData = () => {
     setLibrary(createMockLibrary())
@@ -857,16 +992,56 @@ function App() {
             <table className="scope-track-table">
               <thead>
                 <tr>
-                  <th>Artist</th>
-                  <th>Title</th>
-                  <th>BPM</th>
-                  <th>Key</th>
-                  <th>In Maps</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('artist')}
+                    >
+                      Artist <span aria-hidden="true">{getScopeTrackSortIndicator('artist')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('title')}
+                    >
+                      Title <span aria-hidden="true">{getScopeTrackSortIndicator('title')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('bpm')}
+                    >
+                      BPM <span aria-hidden="true">{getScopeTrackSortIndicator('bpm')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('key')}
+                    >
+                      Key <span aria-hidden="true">{getScopeTrackSortIndicator('key')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('inMaps')}
+                    >
+                      In Maps <span aria-hidden="true">{getScopeTrackSortIndicator('inMaps')}</span>
+                    </button>
+                  </th>
                   <th>Path Finder</th>
                 </tr>
               </thead>
               <tbody>
-                {pathScopeTracks.map((track) => {
+                {sortedScopeTrackRows.map((track) => {
                   const isInPlots = track.bpm !== null && polarKeySet.has(track.camelotKey)
                   return (
                     <tr key={`scope-track:${track.id}`}>
@@ -1300,9 +1475,33 @@ function App() {
                 {formatVisibleKey(selectedCell.camelotKey)} · {selectedCell.bandLabel} · {selectedCell.count} track
                 {selectedCell.count === 1 ? '' : 's'}
               </p>
+              <div className="selected-region-sort-controls" role="group" aria-label="Sort selected region tracks">
+               Sort By
+                <button
+                  type="button"
+                  className="selected-region-sort-button"
+                  onClick={() => handleSelectedRegionSort('artist')}
+                >
+                  Artist <span aria-hidden="true">{getSelectedRegionSortIndicator('artist')}</span>
+                </button>
+                <button
+                  type="button"
+                  className="selected-region-sort-button"
+                  onClick={() => handleSelectedRegionSort('title')}
+                >
+                  Track <span aria-hidden="true">{getSelectedRegionSortIndicator('title')}</span>
+                </button>
+                <button
+                  type="button"
+                  className="selected-region-sort-button"
+                  onClick={() => handleSelectedRegionSort('bpm')}
+                >
+                  BPM <span aria-hidden="true">{getSelectedRegionSortIndicator('bpm')}</span>
+                </button>
+              </div>
               <ul className="track-list">
-                {selectedCell.tracks.length > 0 ? (
-                  selectedCell.tracks.map((track) => (
+                {sortedSelectedRegionTracks.length > 0 ? (
+                  sortedSelectedRegionTracks.map((track) => (
                     <li key={track.id}>
                       <div className="track-title">
                         <strong>{track.artist}</strong>
@@ -1391,6 +1590,51 @@ function formatRating(track: TrackRecord): string {
   }
 
   return `${track.rating.toFixed(1)}★`
+}
+
+function compareNullableNumber(
+  leftValue: number | null,
+  rightValue: number | null,
+  direction: 'asc' | 'desc',
+): number {
+  if (leftValue === rightValue) {
+    return 0
+  }
+  if (leftValue === null) {
+    return 1
+  }
+  if (rightValue === null) {
+    return -1
+  }
+
+  return direction === 'asc' ? leftValue - rightValue : rightValue - leftValue
+}
+
+function compareCamelotKeys(
+  leftValue: string,
+  rightValue: string,
+  direction: 'asc' | 'desc',
+): number {
+  const leftMatch = leftValue.match(/^(1[0-2]|[1-9])(A|B)$/)
+  const rightMatch = rightValue.match(/^(1[0-2]|[1-9])(A|B)$/)
+
+  if (!leftMatch || !rightMatch) {
+    return leftValue.localeCompare(rightValue) * (direction === 'asc' ? 1 : -1)
+  }
+
+  const leftNumber = Number(leftMatch[1])
+  const rightNumber = Number(rightMatch[1])
+  if (leftNumber !== rightNumber) {
+    return (leftNumber - rightNumber) * (direction === 'asc' ? 1 : -1)
+  }
+
+  const leftFamily = leftMatch[2]
+  const rightFamily = rightMatch[2]
+  if (leftFamily !== rightFamily) {
+    return (leftFamily === 'A' ? -1 : 1) * (direction === 'asc' ? 1 : -1)
+  }
+
+  return 0
 }
 
 function getSourceDescription(library: LibraryData): string {
