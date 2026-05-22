@@ -1487,7 +1487,7 @@ function TrackTitleLink({ track }: { track: TrackRecord }) {
       rel="noopener noreferrer"
       className="track-title-link"
       aria-label={`${track.artist} — ${track.title} (opens in new tab)`}
-      title={`${track.title} — opens in new tab`}
+      title={`${track.artist} — ${track.title} (opens in new tab)`}
     >
       {track.title}
     </a>
