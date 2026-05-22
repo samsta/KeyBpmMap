@@ -7,7 +7,7 @@
 }
 
 .panel {
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(7, 11, 20, 0.96));
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.8), rgba(7, 11, 20, 0.82));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 24px;
   box-shadow: 0 18px 50px rgba(2, 6, 23, 0.35);
@@ -69,6 +69,44 @@
   display: grid;
   gap: 8px;
   color: #cbd5e1;
+  font-size: 0.7rem;
+}
+
+.hero-social-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-social-link {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 0px;
+  background: radial-gradient(circle, #ffffff3b 0%, #ffffff00 80%);
+  opacity: 0.9;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease,
+    background 120ms ease;
+}
+
+.hero-social-link:hover,
+.hero-social-link:focus-visible {
+  transform: translateY(-1px);
+  opacity: 1;
+  background: radial-gradient(circle, #7300ff3b 0%, #00a6ff41 80%);
+}
+
+.hero-social-link img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .primary-button,
@@ -461,6 +499,17 @@ input[type='checkbox'] {
 .chart-header p,
 .insight-panel p {
   color: #cbd5e1;
+}
+
+.track-title-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.track-title-link:hover,
+.track-title-link:focus-visible {
+  color: #e2e8f0;
 }
 
 .track-meta {

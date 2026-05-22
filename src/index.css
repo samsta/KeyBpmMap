@@ -7,7 +7,8 @@
   color: #e2e8f0;
   background:
     radial-gradient(circle at top, rgba(37, 99, 235, 0.16), transparent 30%),
-    linear-gradient(180deg, #020617, #0f172a 35%, #020617 100%);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.5), rgba(15, 23, 42, 0.5) 35%, rgba(2, 6, 23, 0.5) 100%),
+    url('/bg.png') center / cover no-repeat fixed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

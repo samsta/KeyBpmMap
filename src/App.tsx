@@ -588,8 +588,91 @@ function App() {
           <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
           <li>Reads Rekordbox XML exports locally in the browser.</li>
           <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
-          <li>Exports both charts as PNG snapshots for notes or prep docs.</li>
+          <li>Exports both charts as PNG snapshots.</li>
         </ul>
+        <div className="hero-social-links" aria-label="Skonoks links">
+          Find my music and socials:
+          <a
+            href="https://soundcloud.com/skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Soundcloud"
+            title="Soundcloud"
+          >
+            <img src="social/soundcloud.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://skonoks.bandcamp.com/"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Bandcamp"
+            title="Bandcamp"
+          >
+            <img src="social/bandcamp.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.beatport.com/artist/skonoks/1160631"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="BeatPort"
+            title="BeatPort"
+          >
+            <img src="social/beatport.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://music.apple.com/us/artist/skonoks/1688551885"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Apple Music"
+            title="Apple Music"
+          >
+            <img src="social/apple-music.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://tidal.com/@skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Tidal"
+            title="Tidal"
+          >
+            <img src="social/tidal.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://open.spotify.com/artist/1qCStUUvKfIofiPt236xhP"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Spotify"
+            title="Spotify"
+          >
+            <img src="social/spotify.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.instagram.com/skonoks_/"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            title="Instagram"
+          >
+            <img src="social/instagram.png" alt="" aria-hidden="true" />
+          </a>
+          <a
+            href="https://www.facebook.com/skonoks"
+            className="hero-social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            title="Facebook"
+          >
+            <img src="social/facebook.png" alt="" aria-hidden="true" />
+          </a>
+        </div>
       </section>
 
       <section className="panel source-panel">
@@ -788,7 +871,9 @@ function App() {
                   return (
                     <tr key={`scope-track:${track.id}`}>
                       <td>{track.artist}</td>
-                      <td>{track.title}</td>
+                      <td>
+                        <TrackTitleLink track={track} />
+                      </td>
                       <td>{track.bpm === null ? 'No BPM' : track.bpm.toFixed(1)}</td>
                       <td>{formatVisibleKey(track.camelotKey)}</td>
                       <td>
@@ -1092,8 +1177,8 @@ function App() {
                         <div className="track-title">
                           <strong>Transition {index + 1}</strong>
                           <span>
-                            {fromTrack ? formatTrackLabel(fromTrack) : step.fromTrackId} →{' '}
-                            {toTrack ? formatTrackLabel(toTrack) : step.toTrackId}
+                            {fromTrack ? <TrackLabelWithLinkedTitle track={fromTrack} /> : step.fromTrackId}{' '}
+                            → {toTrack ? <TrackLabelWithLinkedTitle track={toTrack} /> : step.toTrackId}
                           </span>
                         </div>
                         <div className="track-meta">
@@ -1221,7 +1306,9 @@ function App() {
                     <li key={track.id}>
                       <div className="track-title">
                         <strong>{track.artist}</strong>
-                        <span>{track.title}</span>
+                        <span>
+                          <TrackTitleLink track={track} />
+                        </span>
                       </div>
                       <div className="track-meta">
                         <span>{track.bpm === null ? 'No BPM' : `${track.bpm.toFixed(1)} BPM`}</span>
@@ -1387,8 +1474,44 @@ function formatKeyRepresentationLabel(representation: KeyRepresentation): string
   }
 }
 
-function formatTrackLabel(track: TrackRecord): string {
-  return `${track.artist} — ${track.title}`
+function TrackTitleLink({ track }: { track: TrackRecord }) {
+  const externalTrackUrl = getExternalTrackUrl(track.path)
+  if (!externalTrackUrl) {
+    return <>{track.title}</>
+  }
+
+  return (
+    <a
+      href={externalTrackUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="track-title-link"
+      aria-label={`${track.artist} — ${track.title} (opens in new tab)`}
+      title={`${track.artist} — ${track.title} (opens in new tab)`}
+    >
+      {track.title}
+    </a>
+  )
+}
+
+function TrackLabelWithLinkedTitle({ track }: { track: TrackRecord }) {
+  return (
+    <>
+      {track.artist} — <TrackTitleLink track={track} />
+    </>
+  )
+}
+
+function getExternalTrackUrl(path: string): string | null {
+  try {
+    const parsed = new URL(path)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null
+    }
+    return parsed.toString()
+  } catch {
+    return null
+  }
 }
 
 function formatTrackSearchLabel(track: TrackRecord, keyRepresentation: KeyRepresentation): string {
