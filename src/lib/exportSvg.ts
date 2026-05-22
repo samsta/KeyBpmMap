@@ -2,10 +2,10 @@ export async function downloadSvgAsPng(
   svgElement: SVGSVGElement,
   fileName: string,
 ): Promise<void> {
-  const clonedSvgElement = svgElement.cloneNode(true) as SVGSVGElement
-  inlineTextStyles(svgElement, clonedSvgElement)
+  const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+  inlineTextStyles(svgElement, clonedSvg)
   const serializer = new XMLSerializer()
-  const source = serializer.serializeToString(clonedSvgElement)
+  const source = serializer.serializeToString(clonedSvg)
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
 
@@ -40,6 +40,12 @@ export async function downloadSvgAsPng(
 function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): void {
   const sourceTextNodes = sourceSvg.querySelectorAll('text')
   const targetTextNodes = targetSvg.querySelectorAll('text')
+  if (sourceTextNodes.length !== targetTextNodes.length) {
+    console.warn('SVG export text node mismatch.', {
+      sourceCount: sourceTextNodes.length,
+      targetCount: targetTextNodes.length,
+    })
+  }
 
   targetTextNodes.forEach((targetTextNode, index) => {
     const sourceTextNode = sourceTextNodes[index]
