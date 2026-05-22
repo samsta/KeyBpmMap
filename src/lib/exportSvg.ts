@@ -2,8 +2,10 @@ export async function downloadSvgAsPng(
   svgElement: SVGSVGElement,
   fileName: string,
 ): Promise<void> {
+  const clonedSvgElement = svgElement.cloneNode(true) as SVGSVGElement
+  inlineTextStyles(svgElement, clonedSvgElement)
   const serializer = new XMLSerializer()
-  const source = serializer.serializeToString(svgElement)
+  const source = serializer.serializeToString(clonedSvgElement)
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
 
@@ -33,6 +35,24 @@ export async function downloadSvgAsPng(
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): void {
+  const sourceTextNodes = sourceSvg.querySelectorAll('text')
+  const targetTextNodes = targetSvg.querySelectorAll('text')
+
+  targetTextNodes.forEach((targetTextNode, index) => {
+    const sourceTextNode = sourceTextNodes[index]
+    if (!sourceTextNode) {
+      return
+    }
+
+    const computedStyle = getComputedStyle(sourceTextNode)
+    targetTextNode.setAttribute('fill', computedStyle.fill)
+    targetTextNode.setAttribute('font-family', computedStyle.fontFamily)
+    targetTextNode.setAttribute('font-size', computedStyle.fontSize)
+    targetTextNode.setAttribute('font-weight', computedStyle.fontWeight)
+  })
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
