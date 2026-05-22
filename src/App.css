@@ -501,6 +501,17 @@ input[type='checkbox'] {
   color: #cbd5e1;
 }
 
+.track-title-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.track-title-link:hover,
+.track-title-link:focus-visible {
+  color: #e2e8f0;
+}
+
 .track-meta {
   display: flex;
   flex-wrap: wrap;

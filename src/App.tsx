@@ -871,7 +871,9 @@ function App() {
                   return (
                     <tr key={`scope-track:${track.id}`}>
                       <td>{track.artist}</td>
-                      <td>{track.title}</td>
+                      <td>
+                        <TrackTitleLink track={track} />
+                      </td>
                       <td>{track.bpm === null ? 'No BPM' : track.bpm.toFixed(1)}</td>
                       <td>{formatVisibleKey(track.camelotKey)}</td>
                       <td>
@@ -1175,8 +1177,8 @@ function App() {
                         <div className="track-title">
                           <strong>Transition {index + 1}</strong>
                           <span>
-                            {fromTrack ? formatTrackLabel(fromTrack) : step.fromTrackId} →{' '}
-                            {toTrack ? formatTrackLabel(toTrack) : step.toTrackId}
+                            {fromTrack ? <TrackLabelWithLinkedTitle track={fromTrack} /> : step.fromTrackId}{' '}
+                            → {toTrack ? <TrackLabelWithLinkedTitle track={toTrack} /> : step.toTrackId}
                           </span>
                         </div>
                         <div className="track-meta">
@@ -1304,7 +1306,9 @@ function App() {
                     <li key={track.id}>
                       <div className="track-title">
                         <strong>{track.artist}</strong>
-                        <span>{track.title}</span>
+                        <span>
+                          <TrackTitleLink track={track} />
+                        </span>
                       </div>
                       <div className="track-meta">
                         <span>{track.bpm === null ? 'No BPM' : `${track.bpm.toFixed(1)} BPM`}</span>
@@ -1470,8 +1474,44 @@ function formatKeyRepresentationLabel(representation: KeyRepresentation): string
   }
 }
 
-function formatTrackLabel(track: TrackRecord): string {
-  return `${track.artist} — ${track.title}`
+function TrackTitleLink({ track }: { track: TrackRecord }) {
+  const externalTrackUrl = getExternalTrackUrl(track.path)
+  if (!externalTrackUrl) {
+    return <>{track.title}</>
+  }
+
+  return (
+    <a
+      href={externalTrackUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="track-title-link"
+      aria-label={`Open ${track.artist} — ${track.title}`}
+      title={track.title}
+    >
+      {track.title}
+    </a>
+  )
+}
+
+function TrackLabelWithLinkedTitle({ track }: { track: TrackRecord }) {
+  return (
+    <>
+      {track.artist} — <TrackTitleLink track={track} />
+    </>
+  )
+}
+
+function getExternalTrackUrl(path: string): string | null {
+  try {
+    const parsed = new URL(path)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null
+    }
+    return parsed.toString()
+  } catch {
+    return null
+  }
 }
 
 function formatTrackSearchLabel(track: TrackRecord, keyRepresentation: KeyRepresentation): string {
