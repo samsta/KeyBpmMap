@@ -353,24 +353,26 @@ function App() {
 
       switch (scopeTrackSort.key) {
         case 'artist':
-          comparison = left.artist.localeCompare(right.artist)
+          comparison = left.artist.localeCompare(right.artist) * directionFactor
           break
         case 'title':
-          comparison = left.title.localeCompare(right.title)
+          comparison = left.title.localeCompare(right.title) * directionFactor
           break
         case 'bpm':
           comparison = compareNullableNumber(left.bpm, right.bpm, scopeTrackSort.direction)
           break
         case 'key':
-          comparison = formatVisibleKey(left.camelotKey).localeCompare(formatVisibleKey(right.camelotKey))
+          comparison =
+            formatVisibleKey(left.camelotKey).localeCompare(formatVisibleKey(right.camelotKey)) *
+            directionFactor
           break
         case 'inMaps':
-          comparison = compareInMapsRank(left) - compareInMapsRank(right)
+          comparison = (compareInMapsRank(left) - compareInMapsRank(right)) * directionFactor
           break
       }
 
       if (comparison !== 0) {
-        return scopeTrackSort.key === 'bpm' ? comparison : comparison * directionFactor
+        return comparison
       }
 
       return (
