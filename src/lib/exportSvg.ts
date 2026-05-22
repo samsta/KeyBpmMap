@@ -48,11 +48,19 @@ function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): v
     }
 
     const computedStyle = getComputedStyle(sourceTextNode)
-    targetTextNode.setAttribute('fill', computedStyle.fill)
-    targetTextNode.setAttribute('font-family', computedStyle.fontFamily)
-    targetTextNode.setAttribute('font-size', computedStyle.fontSize)
-    targetTextNode.setAttribute('font-weight', computedStyle.fontWeight)
+    setAttributeIfValue(targetTextNode, 'fill', computedStyle.fill)
+    setAttributeIfValue(targetTextNode, 'font-family', computedStyle.fontFamily)
+    setAttributeIfValue(targetTextNode, 'font-size', computedStyle.fontSize)
+    setAttributeIfValue(targetTextNode, 'font-weight', computedStyle.fontWeight)
   })
+}
+
+function setAttributeIfValue(node: Element, attribute: string, value: string): void {
+  if (!value || value === 'initial' || value === 'inherit' || value === 'unset') {
+    return
+  }
+
+  node.setAttribute(attribute, value)
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
