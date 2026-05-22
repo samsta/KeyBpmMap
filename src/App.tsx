@@ -1476,6 +1476,7 @@ function App() {
                 {selectedCell.count === 1 ? '' : 's'}
               </p>
               <div className="selected-region-sort-controls" role="group" aria-label="Sort selected region tracks">
+               Sort By
                 <button
                   type="button"
                   className="selected-region-sort-button"
