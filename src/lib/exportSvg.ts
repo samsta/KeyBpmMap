@@ -46,25 +46,23 @@ function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): v
       targetCount: targetTextNodes.length,
     })
   }
+  const pairCount = Math.min(sourceTextNodes.length, targetTextNodes.length)
 
-  targetTextNodes.forEach((targetTextNode, index) => {
+  for (let index = 0; index < pairCount; index += 1) {
     const sourceTextNode = sourceTextNodes[index]
-    if (!sourceTextNode) {
-      return
-    }
-
+    const targetTextNode = targetTextNodes[index]
     const computedStyle = getComputedStyle(sourceTextNode)
     setAttributeIfValue(targetTextNode, 'fill', computedStyle.fill)
     setAttributeIfValue(targetTextNode, 'font-family', computedStyle.fontFamily)
     setAttributeIfValue(targetTextNode, 'font-size', computedStyle.fontSize)
     setAttributeIfValue(targetTextNode, 'font-weight', computedStyle.fontWeight)
-  })
+  }
 }
 
-const IGNORED_CSS_KEYWORDS = ['initial', 'inherit', 'unset'] as const
+const IGNORED_CSS_KEYWORDS = new Set(['initial', 'inherit', 'unset'])
 
 function setAttributeIfValue(node: Element, attribute: string, value: string): void {
-  if (!value || IGNORED_CSS_KEYWORDS.includes(value as (typeof IGNORED_CSS_KEYWORDS)[number])) {
+  if (!value || IGNORED_CSS_KEYWORDS.has(value)) {
     return
   }
 
