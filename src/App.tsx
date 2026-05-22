@@ -50,6 +50,8 @@ interface OpenFilePickerConfig {
 
 type PolarKeyMode = 'both' | 'A' | 'B'
 type PathSortMode = 'total' | 'average' | 'max'
+type ScopeTrackSortKey = 'artist' | 'title' | 'bpm' | 'key' | 'inMaps'
+type ScopeTrackSortDirection = 'asc' | 'desc'
 const POLAR_KEY_MODES = ['both', 'A', 'B'] as const
 const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
   { value: 'total', label: 'Total Cost' },
@@ -128,6 +130,13 @@ function App() {
   const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
   const [pathSortMode, setPathSortMode] = useState<PathSortMode>('total')
+  const [scopeTrackSort, setScopeTrackSort] = useState<{
+    key: ScopeTrackSortKey
+    direction: ScopeTrackSortDirection
+  }>({
+    key: 'artist',
+    direction: 'asc',
+  })
   const [showScopeTrackTable, setShowScopeTrackTable] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
@@ -309,6 +318,89 @@ function App() {
     () => (camelotKey: string) => formatKey(camelotKey, keyRepresentation),
     [keyRepresentation],
   )
+  const sortedScopeTrackRows = useMemo(() => {
+    const compareNullableNumber = (
+      leftValue: number | null,
+      rightValue: number | null,
+      direction: ScopeTrackSortDirection,
+    ) => {
+      if (leftValue === rightValue) {
+        return 0
+      }
+      if (leftValue === null) {
+        return 1
+      }
+      if (rightValue === null) {
+        return -1
+      }
+
+      return direction === 'asc' ? leftValue - rightValue : rightValue - leftValue
+    }
+
+    const compareInMapsRank = (track: TrackRecord) => {
+      if (track.bpm !== null && polarKeySet.has(track.camelotKey)) {
+        return 0
+      }
+      if (track.bpm === null) {
+        return 2
+      }
+      return 1
+    }
+
+    return [...pathScopeTracks].sort((left, right) => {
+      const directionFactor = scopeTrackSort.direction === 'asc' ? 1 : -1
+      let comparison = 0
+
+      switch (scopeTrackSort.key) {
+        case 'artist':
+          comparison = left.artist.localeCompare(right.artist)
+          break
+        case 'title':
+          comparison = left.title.localeCompare(right.title)
+          break
+        case 'bpm':
+          comparison = compareNullableNumber(left.bpm, right.bpm, scopeTrackSort.direction)
+          break
+        case 'key':
+          comparison = formatVisibleKey(left.camelotKey).localeCompare(formatVisibleKey(right.camelotKey))
+          break
+        case 'inMaps':
+          comparison = compareInMapsRank(left) - compareInMapsRank(right)
+          break
+      }
+
+      if (comparison !== 0) {
+        return scopeTrackSort.key === 'bpm' ? comparison : comparison * directionFactor
+      }
+
+      return (
+        left.artist.localeCompare(right.artist) ||
+        left.title.localeCompare(right.title) ||
+        left.id.localeCompare(right.id)
+      )
+    })
+  }, [formatVisibleKey, pathScopeTracks, polarKeySet, scopeTrackSort])
+
+  const handleScopeTrackSort = (key: ScopeTrackSortKey) => {
+    setScopeTrackSort((current) =>
+      current.key === key
+        ? {
+            key,
+            direction: current.direction === 'asc' ? 'desc' : 'asc',
+          }
+        : {
+            key,
+            direction: 'asc',
+          },
+    )
+  }
+
+  const getScopeTrackSortIndicator = (key: ScopeTrackSortKey) => {
+    if (scopeTrackSort.key !== key) {
+      return '↕'
+    }
+    return scopeTrackSort.direction === 'asc' ? '↑' : '↓'
+  }
 
   const handleLoadMockData = () => {
     setLibrary(createMockLibrary())
@@ -857,16 +949,56 @@ function App() {
             <table className="scope-track-table">
               <thead>
                 <tr>
-                  <th>Artist</th>
-                  <th>Title</th>
-                  <th>BPM</th>
-                  <th>Key</th>
-                  <th>In Maps</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('artist')}
+                    >
+                      Artist <span aria-hidden="true">{getScopeTrackSortIndicator('artist')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('title')}
+                    >
+                      Title <span aria-hidden="true">{getScopeTrackSortIndicator('title')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('bpm')}
+                    >
+                      BPM <span aria-hidden="true">{getScopeTrackSortIndicator('bpm')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('key')}
+                    >
+                      Key <span aria-hidden="true">{getScopeTrackSortIndicator('key')}</span>
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      type="button"
+                      className="scope-track-sort-button"
+                      onClick={() => handleScopeTrackSort('inMaps')}
+                    >
+                      In Maps <span aria-hidden="true">{getScopeTrackSortIndicator('inMaps')}</span>
+                    </button>
+                  </th>
                   <th>Path Finder</th>
                 </tr>
               </thead>
               <tbody>
-                {pathScopeTracks.map((track) => {
+                {sortedScopeTrackRows.map((track) => {
                   const isInPlots = track.bpm !== null && polarKeySet.has(track.camelotKey)
                   return (
                     <tr key={`scope-track:${track.id}`}>

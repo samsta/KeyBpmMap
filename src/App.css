@@ -534,8 +534,13 @@ input[type='checkbox'] {
 }
 
 .track-action-button {
-  padding: 0.45rem 0.8rem;
-  font-size: 0.82rem;
+  padding: 0.32rem 0.58rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.scope-track-table .track-actions {
+  flex-wrap: nowrap;
 }
 
 .scope-track-table-wrapper {
@@ -564,6 +569,26 @@ input[type='checkbox'] {
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.scope-track-sort-button {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scope-track-sort-button:hover,
+.scope-track-sort-button:focus-visible {
+  color: #cbd5e1;
 }
 
 .scope-track-table tbody td {
