@@ -5,6 +5,7 @@ const SPEED_UP_FACTOR = 1.05946
 const SLOW_DOWN_FACTOR = 0.9439
 const MAX_PATH_RESULTS = 10
 const MAX_EXPLORED_STATES = 50_000
+const DEFAULT_ASYNC_YIELD_AFTER_EXPANSIONS = 250
 
 export interface PathFinderWeights {
   sameKey: number
@@ -48,6 +49,18 @@ export interface NavigationPath {
   trackIds: string[]
   steps: PathStep[]
   totalCost: number
+}
+
+export interface PathSearchProgress {
+  exploredStates: number
+  queuedStates: number
+  resultCount: number
+}
+
+export interface PathSearchOptions {
+  signal?: AbortSignal
+  onProgress?: (progress: PathSearchProgress) => void
+  yieldAfterExpansions?: number
 }
 
 interface ParsedCamelot {
@@ -298,6 +311,174 @@ export function findNavigationPaths(
       }
     }
   }
+
+  return results
+    .sort((left, right) => left.totalCost - right.totalCost || left.steps.length - right.steps.length)
+    .slice(0, MAX_PATH_RESULTS)
+}
+
+export async function findNavigationPathsAsync(
+  tracks: TrackRecord[],
+  startTrackId: string,
+  endTrackId: string,
+  rawSettings: PathFinderSettings,
+  options: PathSearchOptions = {},
+): Promise<NavigationPath[]> {
+  if (!startTrackId || !endTrackId || startTrackId === endTrackId) {
+    return []
+  }
+
+  if (options.signal?.aborted) {
+    return []
+  }
+
+  const settings = clampPathFinderSettings(rawSettings)
+  if (settings.maxTotalCost <= 0) {
+    return []
+  }
+
+  const trackById = new Map(tracks.map((track) => [track.id, track]))
+  const startTrack = trackById.get(startTrackId)
+  const endTrack = trackById.get(endTrackId)
+
+  if (!startTrack || !endTrack || startTrack.bpm === null || endTrack.bpm === null) {
+    return []
+  }
+
+  const queue = new MinCostQueue()
+  queue.push({
+    trackIds: [startTrack.id],
+    steps: [],
+    totalCost: 0,
+  })
+  const results: NavigationPath[] = []
+  const bestArrivalCosts = new Map<string, number[]>()
+  const yieldAfterExpansions = Math.max(50, Math.floor(options.yieldAfterExpansions ?? DEFAULT_ASYNC_YIELD_AFTER_EXPANSIONS))
+  let exploredStates = 0
+  let expansionsSinceYield = 0
+
+  const emitProgress = () => {
+    options.onProgress?.({
+      exploredStates,
+      queuedStates: queue.size,
+      resultCount: results.length,
+    })
+  }
+
+  const maybeYield = async () => {
+    if (expansionsSinceYield < yieldAfterExpansions) {
+      return true
+    }
+
+    emitProgress()
+    expansionsSinceYield = 0
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
+    return !options.signal?.aborted
+  }
+
+  emitProgress()
+
+  while (queue.size > 0) {
+    if (options.signal?.aborted) {
+      return []
+    }
+
+    const current = queue.pop()
+
+    if (!current) {
+      break
+    }
+
+    exploredStates += 1
+    expansionsSinceYield += 1
+    if (exploredStates > MAX_EXPLORED_STATES) {
+      break
+    }
+
+    if (!(await maybeYield())) {
+      return []
+    }
+
+    const currentTrackId = current.trackIds.at(-1)
+    if (!currentTrackId) {
+      continue
+    }
+
+    if (currentTrackId === endTrackId && current.steps.length > 0) {
+      const averageCost = current.totalCost / current.steps.length
+      if (averageCost - settings.maxAverageStepCost > EPSILON) {
+        continue
+      }
+
+      results.push({
+        id: createNavigationPathId(current.trackIds, current.steps),
+        trackIds: current.trackIds,
+        steps: current.steps,
+        totalCost: current.totalCost,
+      })
+
+      if (results.length >= MAX_PATH_RESULTS) {
+        break
+      }
+      continue
+    }
+
+    if (current.totalCost + EPSILON >= settings.maxTotalCost) {
+      continue
+    }
+
+    const currentTrack = trackById.get(currentTrackId)
+    if (!currentTrack || currentTrack.bpm === null) {
+      continue
+    }
+
+    const candidateStates = getTempoAdjustedStates(currentTrack, settings)
+
+    for (const nextTrack of tracks) {
+      expansionsSinceYield += 1
+      if (!(await maybeYield())) {
+        return []
+      }
+
+      if (nextTrack.id === currentTrack.id || nextTrack.bpm === null || current.trackIds.includes(nextTrack.id)) {
+        continue
+      }
+
+      for (const tempoAdjustedState of candidateStates) {
+        const transition = scoreTransition(tempoAdjustedState, nextTrack, settings.weights)
+        if (!transition) {
+          continue
+        }
+
+        if (transition.stepCost - settings.maxStepCost > EPSILON) {
+          continue
+        }
+
+        const totalCost = current.totalCost + transition.stepCost
+        if (totalCost - settings.maxTotalCost > EPSILON) {
+          continue
+        }
+
+        if (!allowTrackArrival(bestArrivalCosts, nextTrack.id, totalCost)) {
+          continue
+        }
+
+        queue.push({
+          trackIds: [...current.trackIds, nextTrack.id],
+          steps: [...current.steps, {
+            fromTrackId: currentTrack.id,
+            toTrackId: nextTrack.id,
+            ...transition,
+          }],
+          totalCost,
+        })
+      }
+    }
+  }
+
+  emitProgress()
 
   return results
     .sort((left, right) => left.totalCost - right.totalCost || left.steps.length - right.steps.length)

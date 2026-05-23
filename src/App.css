@@ -146,6 +146,13 @@
   opacity: 0.7;
 }
 
+.secondary-button:disabled,
+.simple-list button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
 .source-panel,
 .filters-panel,
 .pathfinder-panel {
@@ -339,6 +346,14 @@ input[type='checkbox'] {
   display: grid;
   gap: 16px;
   order: 999;
+}
+
+.pathfinder-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 16px;
 }
 
 .path-weight-grid {

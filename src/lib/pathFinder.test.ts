@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   findNavigationPaths,
+  findNavigationPathsAsync,
   type PathFinderSettings,
 } from './pathFinder'
 import type { TrackRecord } from '../types'
@@ -197,5 +198,54 @@ describe('findNavigationPaths', () => {
 
     expect(findNavigationPaths(tracks, 'start', 'end', settings)).toEqual([])
     expect(findNavigationPaths(tracks, '', 'end', settings)).toEqual([])
+  })
+
+  it('matches synchronous search results when run asynchronously', async () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '8B', 120),
+      makeTrack('mid-1', '8A', 121),
+      makeTrack('mid-2', '8A', 122),
+      makeTrack('mid-3', '8A', 123),
+    ]
+    const settings: PathFinderSettings = {
+      ...TEST_PATH_FINDER_SETTINGS,
+      maxTotalCost: 20,
+      maxStepCost: 8,
+      maxAverageStepCost: 8,
+    }
+
+    const syncResult = findNavigationPaths(tracks, 'start', 'end', settings)
+    const asyncResult = await findNavigationPathsAsync(tracks, 'start', 'end', settings)
+
+    expect(asyncResult).toEqual(syncResult)
+  })
+
+  it('reports progress and supports cancellation in async search', async () => {
+    const tracks: TrackRecord[] = [
+      makeTrack('start', '8A', 120),
+      makeTrack('end', '8B', 120),
+      ...Array.from({ length: 60 }, (_, index) => makeTrack(`mid-${index}`, `${(index % 12) + 1}A`, 110 + index)),
+    ]
+    const progressEvents: number[] = []
+    const abortController = new AbortController()
+    const searchPromise = findNavigationPathsAsync(tracks, 'start', 'end', {
+      ...TEST_PATH_FINDER_SETTINGS,
+      maxTotalCost: 100,
+      maxStepCost: 50,
+      maxAverageStepCost: 50,
+    }, {
+      signal: abortController.signal,
+      yieldAfterExpansions: 20,
+      onProgress: (progress) => {
+        progressEvents.push(progress.exploredStates)
+        if (progress.exploredStates > 5) {
+          abortController.abort()
+        }
+      },
+    })
+
+    await expect(searchPromise).resolves.toEqual([])
+    expect(progressEvents.length).toBeGreaterThan(0)
   })
 })

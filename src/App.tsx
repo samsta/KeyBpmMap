@@ -19,9 +19,10 @@ import { createMockLibrary } from './lib/mockData'
 import {
   DEFAULT_PATH_FINDER_SETTINGS,
   clampPathFinderSettings,
-  findNavigationPaths,
+  findNavigationPathsAsync,
   type NavigationPath,
   type PathFinderSettings,
+  type PathSearchProgress,
   type PathFinderWeights,
 } from './lib/pathFinder'
 import type { LibraryData, SparseCellSummary, TrackRecord } from './types'
@@ -130,6 +131,9 @@ function App() {
     settings: PathFinderSettings
   } | null>(null)
   const [pathSearchStatus, setPathSearchStatus] = useState<string | null>(null)
+  const [pathSearchProgress, setPathSearchProgress] = useState<PathSearchProgress | null>(null)
+  const [isPathSearching, setIsPathSearching] = useState(false)
+  const [navigationPaths, setNavigationPaths] = useState<NavigationPath[]>([])
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
   const [pathSortMode, setPathSortMode] = useState<PathSortMode>('total')
   const [scopeTrackSort, setScopeTrackSort] = useState<{
@@ -150,6 +154,8 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const polarRef = useRef<SVGSVGElement>(null)
   const heatmapRef = useRef<SVGSVGElement>(null)
+  const pathSearchAbortRef = useRef<AbortController | null>(null)
+  const pathSearchRunIdRef = useRef(0)
 
   useEffect(() => {
     try {
@@ -169,6 +175,13 @@ function App() {
       // Ignore localStorage persistence errors.
     }
   }, [pathFinderSettings])
+
+  useEffect(
+    () => () => {
+      pathSearchAbortRef.current?.abort()
+    },
+    [],
+  )
 
   const playlistLookup = useMemo(
     () => new Map(library.playlists.map((playlist) => [playlist.id, playlist])),
@@ -288,21 +301,86 @@ function App() {
 
     return pathSearchRequest
   }, [pathSearchRequest, pathTrackLookup])
-  const navigationPaths = useMemo(
-    () => {
-      if (!searchedPathSelection) {
-        return []
+
+  useEffect(() => {
+    pathSearchAbortRef.current?.abort()
+
+    if (!searchedPathSelection) {
+      return
+    }
+
+    const abortController = new AbortController()
+    const runId = pathSearchRunIdRef.current + 1
+    pathSearchRunIdRef.current = runId
+    pathSearchAbortRef.current = abortController
+    void (async () => {
+      await Promise.resolve()
+      if (pathSearchRunIdRef.current !== runId) {
+        return
       }
 
-      return findNavigationPaths(
-        pathScopeTracks,
-        searchedPathSelection.startTrackId,
-        searchedPathSelection.endTrackId,
-        searchedPathSelection.settings,
-      )
-    },
-    [pathScopeTracks, searchedPathSelection],
-  )
+      setIsPathSearching(true)
+      setNavigationPaths([])
+      setPathSearchProgress({
+        exploredStates: 0,
+        queuedStates: 1,
+        resultCount: 0,
+      })
+      setPathSearchStatus('Searching…')
+
+      try {
+        const paths = await findNavigationPathsAsync(
+          pathScopeTracks,
+          searchedPathSelection.startTrackId,
+          searchedPathSelection.endTrackId,
+          searchedPathSelection.settings,
+          {
+            signal: abortController.signal,
+            onProgress: (progress) => {
+              if (pathSearchRunIdRef.current !== runId) {
+                return
+              }
+
+              setPathSearchProgress(progress)
+              setPathSearchStatus(
+                `Searching… explored ${progress.exploredStates.toLocaleString()} states, queued ${progress.queuedStates.toLocaleString()}, found ${progress.resultCount} path${progress.resultCount === 1 ? '' : 's'}.`,
+              )
+            },
+          },
+        )
+        if (pathSearchRunIdRef.current !== runId) {
+          return
+        }
+
+        setNavigationPaths(paths)
+        setPathSearchStatus(
+          paths.length === 0
+            ? 'No paths found with the current search settings.'
+            : `Found ${paths.length} path${paths.length === 1 ? '' : 's'}.`,
+        )
+      } catch (caughtError) {
+        if (abortController.signal.aborted || pathSearchRunIdRef.current !== runId) {
+          return
+        }
+
+        setPathSearchStatus(
+          caughtError instanceof Error
+            ? `Path search failed: ${caughtError.message}`
+            : 'Path search failed.',
+        )
+        setNavigationPaths([])
+      } finally {
+        if (pathSearchRunIdRef.current === runId) {
+          setIsPathSearching(false)
+          setPathSearchProgress(null)
+          if (pathSearchAbortRef.current === abortController) {
+            pathSearchAbortRef.current = null
+          }
+        }
+      }
+    })()
+  }, [pathScopeTracks, searchedPathSelection])
+
   const sortedNavigationPaths = useMemo(
     () =>
       [...navigationPaths].sort((left, right) => {
@@ -450,6 +528,29 @@ function App() {
     return selectedRegionSort.direction === 'asc' ? '↑' : '↓'
   }
 
+  const resetPathSearch = () => {
+    pathSearchAbortRef.current?.abort()
+    pathSearchAbortRef.current = null
+    pathSearchRunIdRef.current += 1
+    setPathSearchRequest(null)
+    setPathSearchStatus(null)
+    setPathSearchProgress(null)
+    setIsPathSearching(false)
+    setNavigationPaths([])
+    setSelectedPathId(null)
+  }
+
+  const handleCancelPathSearch = () => {
+    if (!isPathSearching) {
+      return
+    }
+
+    pathSearchAbortRef.current?.abort()
+    setPathSearchStatus('Search cancelled.')
+    setPathSearchProgress(null)
+    setIsPathSearching(false)
+  }
+
   const handleLoadMockData = () => {
     setLibrary(createMockLibrary())
     setSelectedCellId(null)
@@ -457,9 +558,7 @@ function App() {
     setError(null)
     setPolarKeyMode('both')
     setPathSelection({ startTrack: '', endTrack: '' })
-    setPathSearchRequest(null)
-    setPathSearchStatus(null)
-    setSelectedPathId(null)
+    resetPathSearch()
   }
 
   const loadLibraryFile = async (file: File | null) => {
@@ -477,9 +576,7 @@ function App() {
       setFilters(initialFilters)
       setPolarKeyMode('both')
       setPathSelection({ startTrack: '', endTrack: '' })
-      setPathSearchRequest(null)
-      setPathSearchStatus(null)
-      setSelectedPathId(null)
+      resetPathSearch()
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -565,6 +662,10 @@ function App() {
   }
 
   const handleFindPath = () => {
+    if (isPathSearching) {
+      return
+    }
+
     const startTrackId = pathTrackLabelById.has(pathSelection.startTrack)
       ? pathSelection.startTrack
       : resolveTrackId(pathSelection.startTrack, pathTrackIdByLabel, pathTrackLookup)
@@ -574,17 +675,28 @@ function App() {
 
     if (!startTrackId || !endTrackId) {
       setPathSearchStatus('Select valid Start Track and End Track values from the list.')
+      setPathSearchProgress(null)
+      setNavigationPaths([])
+      setSelectedPathId(null)
       setPathSearchRequest(null)
       return
     }
 
     if (startTrackId === endTrackId) {
       setPathSearchStatus('Start Track and End Track must be different.')
+      setPathSearchProgress(null)
+      setNavigationPaths([])
+      setSelectedPathId(null)
       setPathSearchRequest(null)
       return
     }
 
-    setPathSearchStatus(null)
+    setPathSearchStatus('Preparing search…')
+    setPathSearchProgress({
+      exploredStates: 0,
+      queuedStates: 1,
+      resultCount: 0,
+    })
     setPathSearchRequest({
       startTrackId,
       endTrackId,
@@ -650,6 +762,10 @@ function App() {
     filters.playlistId === 'all'
       ? 'All playlists'
       : playlistLookup.get(filters.playlistId)?.name ?? 'Selected playlist'
+  const activePathProgressLabel =
+    isPathSearching && pathSearchProgress
+      ? `Explored ${pathSearchProgress.exploredStates.toLocaleString()} states; queue ${pathSearchProgress.queuedStates.toLocaleString()}; paths ${pathSearchProgress.resultCount}.`
+      : null
 
   return (
     <main className="app-shell">
@@ -1076,6 +1192,7 @@ function App() {
                             type="button"
                             className="secondary-button track-action-button"
                             aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as start track`}
+                            disabled={isPathSearching}
                             onClick={() => handleSetPathTrack('startTrack', track.id)}
                           >
                             Set as Start Track
@@ -1084,6 +1201,7 @@ function App() {
                             type="button"
                             className="secondary-button track-action-button"
                             aria-label={`Set ${track.artist} - ${track.title} (${formatVisibleKey(track.camelotKey)}) as end track`}
+                            disabled={isPathSearching}
                             onClick={() => handleSetPathTrack('endTrack', track.id)}
                           >
                             Set as End Track
@@ -1114,137 +1232,145 @@ function App() {
           </div>
         </div>
 
-        <div className="field-grid path-track-grid">
-          <label>
-            Start Track
-            <input
-              type="search"
-              list="path-start-track-options"
-              value={pathSelection.startTrack}
-              placeholder="Type to filter tracks"
-              onChange={(event) =>
-                setPathSelection((current) => ({ ...current, startTrack: event.target.value }))
-              }
-            />
-          </label>
-          <datalist id="path-start-track-options">
-            {pathTrackOptions.map((option) => (
-              <option key={`path-start-${option.id}`} value={option.label} />
-            ))}
-          </datalist>
-
-          <label>
-            End Track
-            <input
-              type="search"
-              list="path-end-track-options"
-              value={pathSelection.endTrack}
-              placeholder="Type to filter tracks"
-              onChange={(event) =>
-                setPathSelection((current) => ({ ...current, endTrack: event.target.value }))
-              }
-            />
-          </label>
-          <datalist id="path-end-track-options">
-            {pathTrackOptions.map((option) => (
-              <option key={`path-end-${option.id}`} value={option.label} />
-            ))}
-          </datalist>
-        </div>
-
-        <div className="field-grid">
-          <label>
-            Max Total Cost
-            <input
-              type="number"
-              step="0.1"
-              value={pathFinderSettings.maxTotalCost}
-              onChange={(event) => handlePathMaxCostChange(event.target.value)}
-            />
-          </label>
-          <label>
-            Max Transition Cost
-            <input
-              type="number"
-              step="0.1"
-              value={pathFinderSettings.maxStepCost}
-              onChange={(event) => handlePathMaxStepCostChange(event.target.value)}
-            />
-          </label>
-          <label>
-            Max Average Cost
-            <input
-              type="number"
-              step="0.1"
-              value={pathFinderSettings.maxAverageStepCost}
-              onChange={(event) => handlePathMaxAverageCostChange(event.target.value)}
-            />
-          </label>
-          <label>
-            Sort Paths By
-            <select value={pathSortMode} onChange={(event) => setPathSortMode(asPathSortMode(event.target.value))}>
-              {PATH_SORT_MODES.map((mode) => (
-                <option key={mode.value} value={mode.value}>
-                  {mode.label}
-                </option>
+        <fieldset className="pathfinder-fieldset" disabled={isPathSearching}>
+          <div className="field-grid path-track-grid">
+            <label>
+              Start Track
+              <input
+                type="search"
+                list="path-start-track-options"
+                value={pathSelection.startTrack}
+                placeholder="Type to filter tracks"
+                onChange={(event) =>
+                  setPathSelection((current) => ({ ...current, startTrack: event.target.value }))
+                }
+              />
+            </label>
+            <datalist id="path-start-track-options">
+              {pathTrackOptions.map((option) => (
+                <option key={`path-start-${option.id}`} value={option.label} />
               ))}
-            </select>
-          </label>
+            </datalist>
 
-          <label className="path-checkbox">
-            <span>Allow Key Change by Tempo</span>
-            <input
-              type="checkbox"
-              checked={pathFinderSettings.allowKeyChangeByTempo}
-              onChange={(event) =>
-                setPathFinderSettings((current) => ({
-                  ...current,
-                  allowKeyChangeByTempo: event.target.checked,
-                }))
-              }
-            />
-          </label>
-        </div>
+            <label>
+              End Track
+              <input
+                type="search"
+                list="path-end-track-options"
+                value={pathSelection.endTrack}
+                placeholder="Type to filter tracks"
+                onChange={(event) =>
+                  setPathSelection((current) => ({ ...current, endTrack: event.target.value }))
+                }
+              />
+            </label>
+            <datalist id="path-end-track-options">
+              {pathTrackOptions.map((option) => (
+                <option key={`path-end-${option.id}`} value={option.label} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="field-grid">
+            <label>
+              Max Total Cost
+              <input
+                type="number"
+                step="0.1"
+                value={pathFinderSettings.maxTotalCost}
+                onChange={(event) => handlePathMaxCostChange(event.target.value)}
+              />
+            </label>
+            <label>
+              Max Transition Cost
+              <input
+                type="number"
+                step="0.1"
+                value={pathFinderSettings.maxStepCost}
+                onChange={(event) => handlePathMaxStepCostChange(event.target.value)}
+              />
+            </label>
+            <label>
+              Max Average Cost
+              <input
+                type="number"
+                step="0.1"
+                value={pathFinderSettings.maxAverageStepCost}
+                onChange={(event) => handlePathMaxAverageCostChange(event.target.value)}
+              />
+            </label>
+            <label>
+              Sort Paths By
+              <select value={pathSortMode} onChange={(event) => setPathSortMode(asPathSortMode(event.target.value))}>
+                {PATH_SORT_MODES.map((mode) => (
+                  <option key={mode.value} value={mode.value}>
+                    {mode.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="path-checkbox">
+              <span>Allow Key Change by Tempo</span>
+              <input
+                type="checkbox"
+                checked={pathFinderSettings.allowKeyChangeByTempo}
+                onChange={(event) =>
+                  setPathFinderSettings((current) => ({
+                    ...current,
+                    allowKeyChangeByTempo: event.target.checked,
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <h4 className="path-section-heading">Transition costs</h4>
+          <div className="field-grid path-weight-grid">
+            {PATH_WEIGHT_FIELDS.map((field) => {
+              const helpText = `${field.description}${
+                field.exampleFrom && field.exampleTo
+                  ? ` Example: ${formatVisibleKey(field.exampleFrom)} → ${formatVisibleKey(field.exampleTo)}.`
+                  : ` ${field.exampleText ?? ''}`
+              }`
+
+              return (
+                <label key={field.key}>
+                  <span className="path-weight-label-row">
+                    <span className="path-weight-label-text">
+                      {formatWeightLabel(field.key, field.label, keyRepresentation)}
+                    </span>
+                    <span
+                      className="path-weight-tooltip"
+                      title={helpText}
+                      aria-label={helpText}
+                      tabIndex={0}
+                    >
+                      ⓘ
+                    </span>
+                  </span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={pathFinderSettings.weights[field.key]}
+                    onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
+                  />
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
         <div className="path-actions">
-          <button type="button" className="primary-button" onClick={handleFindPath}>
-            Find Path
+          <button type="button" className="primary-button" onClick={handleFindPath} disabled={isPathSearching}>
+            {isPathSearching ? 'Searching…' : 'Find Path'}
           </button>
+          {isPathSearching ? (
+            <button type="button" className="secondary-button" onClick={handleCancelPathSearch}>
+              Cancel Search
+            </button>
+          ) : null}
           {pathSearchStatus ? <p className="path-status">{pathSearchStatus}</p> : null}
-        </div>
-
-        <h4 className="path-section-heading">Transition costs</h4>
-        <div className="field-grid path-weight-grid">
-          {PATH_WEIGHT_FIELDS.map((field) => {
-            const helpText = `${field.description}${
-              field.exampleFrom && field.exampleTo
-                ? ` Example: ${formatVisibleKey(field.exampleFrom)} → ${formatVisibleKey(field.exampleTo)}.`
-                : ` ${field.exampleText ?? ''}`
-            }`
-
-            return (
-              <label key={field.key}>
-                <span className="path-weight-label-row">
-                  <span className="path-weight-label-text">
-                    {formatWeightLabel(field.key, field.label, keyRepresentation)}
-                  </span>
-                  <span
-                    className="path-weight-tooltip"
-                    title={helpText}
-                    aria-label={helpText}
-                    tabIndex={0}
-                  >
-                    ⓘ
-                  </span>
-                </span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={pathFinderSettings.weights[field.key]}
-                  onChange={(event) => handlePathWeightChange(field.key, event.target.value)}
-                />
-              </label>
-            )
-          })}
+          {!pathSearchStatus && activePathProgressLabel ? <p className="path-status">{activePathProgressLabel}</p> : null}
         </div>
 
         {searchedPathSelection ? (
@@ -1558,6 +1684,7 @@ function App() {
                         <button
                           type="button"
                           className="secondary-button track-action-button"
+                          disabled={isPathSearching}
                           onClick={() => handleSetPathTrack('startTrack', track.id)}
                         >
                           Set as Start Track
@@ -1565,6 +1692,7 @@ function App() {
                         <button
                           type="button"
                           className="secondary-button track-action-button"
+                          disabled={isPathSearching}
                           onClick={() => handleSetPathTrack('endTrack', track.id)}
                         >
                           Set as End Track
