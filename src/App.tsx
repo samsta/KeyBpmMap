@@ -314,6 +314,7 @@ function App() {
     pathSearchRunIdRef.current = runId
     pathSearchAbortRef.current = abortController
     void (async () => {
+      // Defer state updates to satisfy react-hooks/set-state-in-effect and keep effect startup non-blocking.
       await Promise.resolve()
       if (pathSearchRunIdRef.current !== runId) {
         return

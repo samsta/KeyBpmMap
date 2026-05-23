@@ -353,7 +353,10 @@ export async function findNavigationPathsAsync(
   })
   const results: NavigationPath[] = []
   const bestArrivalCosts = new Map<string, number[]>()
-  const yieldAfterExpansions = Math.max(50, Math.floor(options.yieldAfterExpansions ?? DEFAULT_ASYNC_YIELD_AFTER_EXPANSIONS))
+  const expansionYieldThreshold = Math.max(
+    50,
+    Math.floor(options.yieldAfterExpansions ?? DEFAULT_ASYNC_YIELD_AFTER_EXPANSIONS),
+  )
   let exploredStates = 0
   let expansionsSinceYield = 0
 
@@ -366,7 +369,7 @@ export async function findNavigationPathsAsync(
   }
 
   const maybeYield = async () => {
-    if (expansionsSinceYield < yieldAfterExpansions) {
+    if (expansionsSinceYield < expansionYieldThreshold) {
       return true
     }
 
