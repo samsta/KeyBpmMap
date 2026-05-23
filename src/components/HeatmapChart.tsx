@@ -7,18 +7,19 @@ interface HeatmapChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
   keys: string[]
+  legendMaxCount: number
   formatKeyLabel: (camelotKey: string) => string
   selectedCellId: string | null
   onSelect: (cellId: string) => void
 }
 
 const width = 920
-const margin = { top: 32, right: 24, bottom: 72, left: 76 }
+const margin = { top: 32, right: 24, bottom: 102, left: 76 }
 const BAND_HEIGHT_PX = 18
 const MIN_HEIGHT_PX = 420
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
-  ({ bands, cells, keys, formatKeyLabel, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const height = Math.max(
       MIN_HEIGHT_PX,
@@ -51,6 +52,15 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
         role="img"
         aria-label="BPM by key heatmap"
       >
+        <defs>
+          <linearGradient id="heatmap-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#0d0887" />
+            <stop offset="25%" stopColor="#6a00a8" />
+            <stop offset="50%" stopColor="#b12a90" />
+            <stop offset="75%" stopColor="#e16462" />
+            <stop offset="100%" stopColor="#f0f921" />
+          </linearGradient>
+        </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
 
         {cells.map((cell) => {
@@ -115,6 +125,13 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
             </text>
           )
         })}
+
+        <g transform={`translate(${width - margin.right - 180} ${height - 38})`}>
+          <text className="chart-label" x="0" y="-10">Tracks in cell</text>
+          <rect x="0" y="0" width="180" height="12" rx="6" fill="url(#heatmap-legend-gradient)" />
+          <text className="chart-label muted" x="0" y="28">1</text>
+          <text className="chart-label muted" x="180" y="28" textAnchor="end">{legendMaxCount}</text>
+        </g>
       </svg>
     )
   },

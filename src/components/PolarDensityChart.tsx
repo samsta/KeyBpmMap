@@ -7,6 +7,7 @@ interface PolarDensityChartProps {
   bands: BpmBand[]
   cells: DensityCell[]
   keys: string[]
+  legendMaxCount: number
   formatKeyLabel: (camelotKey: string) => string
   selectedCellId: string | null
   onSelect: (cellId: string) => void
@@ -27,7 +28,7 @@ const BAND_LABEL_FONT_MAX = 12.5
 const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
-  ({ bands, cells, keys, formatKeyLabel, selectedCellId, onSelect }, ref) => {
+  ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
     const maximum = Math.max(1, ...cells.map((cell) => cell.count))
     const ringSize = (outerRadius - innerRadius) / bands.length
     const bandLabelFontSize = clampValue(
@@ -65,6 +66,15 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
         role="img"
         aria-label="Polar harmonic density map"
       >
+        <defs>
+          <linearGradient id="polar-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#0d0887" />
+            <stop offset="25%" stopColor="#6a00a8" />
+            <stop offset="50%" stopColor="#b12a90" />
+            <stop offset="75%" stopColor="#e16462" />
+            <stop offset="100%" stopColor="#f0f921" />
+          </linearGradient>
+        </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
         <g transform={`translate(${width / 2}, ${height / 2})`}>
           {bands.map((band, index) => (
@@ -133,6 +143,13 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
               </text>
             )
           })}
+        </g>
+
+        <g transform="translate(220 580)">
+          <text className="chart-label" x="0" y="-10">Tracks in cell</text>
+          <rect x="0" y="0" width="180" height="12" rx="6" fill="url(#polar-legend-gradient)" />
+          <text className="chart-label muted" x="0" y="28">1</text>
+          <text className="chart-label muted" x="180" y="28" textAnchor="end">{legendMaxCount}</text>
         </g>
       </svg>
     )

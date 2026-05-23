@@ -1559,22 +1559,11 @@ function App() {
             bands={bpmBands}
             cells={visibleKeyCells}
             keys={polarKeys}
+            legendMaxCount={visibleCellLegendMaxCount}
             formatKeyLabel={formatVisibleKey}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
-          <div className="chart-legend">
-            <span className="chart-legend-label">Tracks in cell</span>
-            <div
-              className="chart-legend-scale chart-legend-scale--plasma"
-              role="img"
-              aria-label="Polar color legend"
-            />
-            <div className="chart-legend-ticks">
-              <span>1</span>
-              <span>{visibleCellLegendMaxCount}</span>
-            </div>
-          </div>
         </article>
 
         <article className="panel chart-panel">
@@ -1614,22 +1603,11 @@ function App() {
             bands={bpmBands}
             cells={visibleKeyCells}
             keys={polarKeys}
+            legendMaxCount={visibleCellLegendMaxCount}
             formatKeyLabel={formatVisibleKey}
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
-          <div className="chart-legend">
-            <span className="chart-legend-label">Tracks in cell</span>
-            <div
-              className="chart-legend-scale chart-legend-scale--plasma"
-              role="img"
-              aria-label="Heatmap color legend"
-            />
-            <div className="chart-legend-ticks">
-              <span>1</span>
-              <span>{visibleCellLegendMaxCount}</span>
-            </div>
-          </div>
         </article>
       </section>
 
