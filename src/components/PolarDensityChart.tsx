@@ -2,6 +2,7 @@ import { arc, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
 import type { BpmBand, DensityCell } from '../types'
+import { PLASMA_GRADIENT_STOPS } from './plasmaLegend'
 
 interface PolarDensityChartProps {
   bands: BpmBand[]
@@ -26,6 +27,10 @@ const SELECTED_STROKE_MAX = 2.5
 const BAND_LABEL_FONT_MIN = 4
 const BAND_LABEL_FONT_MAX = 12.5
 const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
+const LEGEND_X = 220
+const LEGEND_Y = 580
+const LEGEND_WIDTH = 180
+const LEGEND_HEIGHT = 12
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
@@ -68,11 +73,9 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
       >
         <defs>
           <linearGradient id="polar-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0d0887" />
-            <stop offset="25%" stopColor="#6a00a8" />
-            <stop offset="50%" stopColor="#b12a90" />
-            <stop offset="75%" stopColor="#e16462" />
-            <stop offset="100%" stopColor="#f0f921" />
+            {PLASMA_GRADIENT_STOPS.map((stop) => (
+              <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+            ))}
           </linearGradient>
         </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
@@ -145,11 +148,11 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
           })}
         </g>
 
-        <g transform="translate(220 580)">
+        <g transform={`translate(${LEGEND_X} ${LEGEND_Y})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
-          <rect x="0" y="0" width="180" height="12" rx="6" fill="url(#polar-legend-gradient)" />
+          <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#polar-legend-gradient)" />
           <text className="chart-label muted" x="0" y="28">1</text>
-          <text className="chart-label muted" x="180" y="28" textAnchor="end">{legendMaxCount}</text>
+          <text className="chart-label muted" x={LEGEND_WIDTH} y="28" textAnchor="end">{legendMaxCount}</text>
         </g>
       </svg>
     )

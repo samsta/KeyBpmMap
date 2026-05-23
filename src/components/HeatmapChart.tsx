@@ -2,6 +2,7 @@ import { scaleLinear, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
 import type { BpmBand, DensityCell } from '../types'
+import { PLASMA_GRADIENT_STOPS } from './plasmaLegend'
 
 interface HeatmapChartProps {
   bands: BpmBand[]
@@ -17,6 +18,9 @@ const width = 920
 const margin = { top: 32, right: 24, bottom: 102, left: 76 }
 const BAND_HEIGHT_PX = 18
 const MIN_HEIGHT_PX = 420
+const LEGEND_WIDTH = 180
+const LEGEND_HEIGHT = 12
+const LEGEND_BOTTOM_OFFSET = 38
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
   ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
@@ -54,11 +58,9 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
       >
         <defs>
           <linearGradient id="heatmap-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0d0887" />
-            <stop offset="25%" stopColor="#6a00a8" />
-            <stop offset="50%" stopColor="#b12a90" />
-            <stop offset="75%" stopColor="#e16462" />
-            <stop offset="100%" stopColor="#f0f921" />
+            {PLASMA_GRADIENT_STOPS.map((stop) => (
+              <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+            ))}
           </linearGradient>
         </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
@@ -126,11 +128,11 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
           )
         })}
 
-        <g transform={`translate(${width - margin.right - 180} ${height - 38})`}>
+        <g transform={`translate(${width - margin.right - LEGEND_WIDTH} ${height - LEGEND_BOTTOM_OFFSET})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
-          <rect x="0" y="0" width="180" height="12" rx="6" fill="url(#heatmap-legend-gradient)" />
+          <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#heatmap-legend-gradient)" />
           <text className="chart-label muted" x="0" y="28">1</text>
-          <text className="chart-label muted" x="180" y="28" textAnchor="end">{legendMaxCount}</text>
+          <text className="chart-label muted" x={LEGEND_WIDTH} y="28" textAnchor="end">{legendMaxCount}</text>
         </g>
       </svg>
     )
