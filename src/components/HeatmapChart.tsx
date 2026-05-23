@@ -1,5 +1,5 @@
 import { scaleLinear, scaleSequential } from 'd3'
-import { interpolateTurbo } from 'd3-scale-chromatic'
+import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
 import type { BpmBand, DensityCell } from '../types'
 
@@ -25,7 +25,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
       margin.top + margin.bottom + bands.length * BAND_HEIGHT_PX,
     )
     const colorScale = useMemo(
-      () => scaleSequential(interpolateTurbo).domain([0, maximum]),
+      () => scaleSequential(interpolatePlasma).domain([1, maximum]),
       [maximum],
     )
     const xScale = useMemo(

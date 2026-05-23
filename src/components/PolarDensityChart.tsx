@@ -53,7 +53,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
       [bands],
     )
     const colorScale = useMemo(
-      () => scaleSequential(interpolatePlasma).domain([0, maximum]),
+      () => scaleSequential(interpolatePlasma).domain([1, maximum]),
       [maximum],
     )
 

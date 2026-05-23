@@ -164,6 +164,10 @@
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
+.path-track-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .field-grid label {
   display: grid;
   gap: 8px;
@@ -304,17 +308,6 @@ input[type='checkbox'] {
     #b12a90 50%,
     #e16462 75%,
     #f0f921 100%
-  );
-}
-
-.chart-legend-scale--turbo {
-  background: linear-gradient(
-    90deg,
-    #30123b 0%,
-    #4666ff 25%,
-    #1bcfd4 50%,
-    #9af03f 75%,
-    #fcffa4 100%
   );
 }
 

@@ -237,6 +237,7 @@ function App() {
     () => Math.max(0, ...visibleKeyCells.map((cell) => cell.count)),
     [visibleKeyCells],
   )
+  const visibleCellLegendMaxCount = Math.max(1, visibleCellMaxCount)
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
     [densityCells, selectedCellId],
@@ -455,6 +456,10 @@ function App() {
     setFilters(initialFilters)
     setError(null)
     setPolarKeyMode('both')
+    setPathSelection({ startTrack: '', endTrack: '' })
+    setPathSearchRequest(null)
+    setPathSearchStatus(null)
+    setSelectedPathId(null)
   }
 
   const loadLibraryFile = async (file: File | null) => {
@@ -471,6 +476,10 @@ function App() {
       setSelectedCellId(null)
       setFilters(initialFilters)
       setPolarKeyMode('both')
+      setPathSelection({ startTrack: '', endTrack: '' })
+      setPathSearchRequest(null)
+      setPathSearchStatus(null)
+      setSelectedPathId(null)
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -1105,7 +1114,7 @@ function App() {
           </div>
         </div>
 
-        <div className="field-grid">
+        <div className="field-grid path-track-grid">
           <label>
             Start Track
             <input
@@ -1141,7 +1150,9 @@ function App() {
               <option key={`path-end-${option.id}`} value={option.label} />
             ))}
           </datalist>
+        </div>
 
+        <div className="field-grid">
           <label>
             Max Total Cost
             <input
@@ -1433,8 +1444,8 @@ function App() {
               aria-label="Polar color legend"
             />
             <div className="chart-legend-ticks">
-              <span>0</span>
-              <span>{visibleCellMaxCount}</span>
+              <span>1</span>
+              <span>{visibleCellLegendMaxCount}</span>
             </div>
           </div>
         </article>
@@ -1483,13 +1494,13 @@ function App() {
           <div className="chart-legend">
             <span className="chart-legend-label">Tracks in cell</span>
             <div
-              className="chart-legend-scale chart-legend-scale--turbo"
+              className="chart-legend-scale chart-legend-scale--plasma"
               role="img"
               aria-label="Heatmap color legend"
             />
             <div className="chart-legend-ticks">
-              <span>0</span>
-              <span>{visibleCellMaxCount}</span>
+              <span>1</span>
+              <span>{visibleCellLegendMaxCount}</span>
             </div>
           </div>
         </article>
