@@ -233,6 +233,10 @@ function App() {
     () => densityCells.filter((cell) => polarKeySet.has(cell.camelotKey)),
     [densityCells, polarKeySet],
   )
+  const visibleCellMaxCount = useMemo(
+    () => Math.max(0, ...visibleKeyCells.map((cell) => cell.count)),
+    [visibleKeyCells],
+  )
   const selectedCell = useMemo(
     () => densityCells.find((cell) => cell.id === selectedCellId) ?? null,
     [densityCells, selectedCellId],
@@ -543,11 +547,12 @@ function App() {
   }
 
   const handleSetPathTrack = (target: 'startTrack' | 'endTrack', trackId: string) => {
-    if (!pathTrackLabelById.has(trackId)) {
+    const trackLabel = pathTrackLabelById.get(trackId)
+    if (!trackLabel) {
       return
     }
 
-    setPathSelection((current) => ({ ...current, [target]: trackId }))
+    setPathSelection((current) => ({ ...current, [target]: trackLabel }))
   }
 
   const handleFindPath = () => {
@@ -1420,6 +1425,18 @@ function App() {
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
+          <div className="chart-legend">
+            <span className="chart-legend-label">Tracks in cell</span>
+            <div
+              className="chart-legend-scale chart-legend-scale--plasma"
+              role="img"
+              aria-label="Polar color legend"
+            />
+            <div className="chart-legend-ticks">
+              <span>0</span>
+              <span>{visibleCellMaxCount}</span>
+            </div>
+          </div>
         </article>
 
         <article className="panel chart-panel">
@@ -1463,6 +1480,18 @@ function App() {
             selectedCellId={selectedCellId}
             onSelect={setSelectedCellId}
           />
+          <div className="chart-legend">
+            <span className="chart-legend-label">Tracks in cell</span>
+            <div
+              className="chart-legend-scale chart-legend-scale--turbo"
+              role="img"
+              aria-label="Heatmap color legend"
+            />
+            <div className="chart-legend-ticks">
+              <span>0</span>
+              <span>{visibleCellMaxCount}</span>
+            </div>
+          </div>
         </article>
       </section>
 

@@ -279,6 +279,52 @@ input[type='checkbox'] {
   display: block;
 }
 
+.chart-legend {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.chart-legend-label {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
+
+.chart-legend-scale {
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.chart-legend-scale--plasma {
+  background: linear-gradient(
+    90deg,
+    #0d0887 0%,
+    #6a00a8 25%,
+    #b12a90 50%,
+    #e16462 75%,
+    #f0f921 100%
+  );
+}
+
+.chart-legend-scale--turbo {
+  background: linear-gradient(
+    90deg,
+    #30123b 0%,
+    #4666ff 25%,
+    #1bcfd4 50%,
+    #9af03f 75%,
+    #fcffa4 100%
+  );
+}
+
+.chart-legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
 .chart-region {
   cursor: pointer;
 }
@@ -436,9 +482,7 @@ input[type='checkbox'] {
 }
 
 .path-summary-list {
-  max-height: 220px;
-  overflow: auto;
-  padding-right: 6px;
+  max-height: 800px;
 }
 
 .path-details {
@@ -465,6 +509,9 @@ input[type='checkbox'] {
   padding: 0;
   display: grid;
   gap: 12px;
+  max-height: 800px;
+  overflow: auto;
+  padding-right: 6px;
 }
 
 .track-list li,
@@ -545,6 +592,7 @@ input[type='checkbox'] {
 
 .scope-track-table-wrapper {
   overflow: auto;
+  max-height: 800px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 14px;
 }
@@ -641,8 +689,6 @@ input[type='checkbox'] {
   gap: 8px;
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  padding-right: 6px;
 }
 
 .sparse-list li {
