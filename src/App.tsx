@@ -64,6 +64,7 @@ const PATH_SORT_MODES: Array<{ value: PathSortMode; label: string }> = [
 const KEY_REPRESENTATIONS = ['camelot', 'open-key', 'musical'] as const
 const KEY_REPRESENTATION_STORAGE_KEY = 'keybpmmap.keyRepresentation'
 const PATH_FINDER_SETTINGS_STORAGE_KEY = 'keybpmmap.pathFinderSettings'
+const PATH_SEARCH_STATUS_UPDATE_STATE_INTERVAL = 1_000
 const APP_VERSION = __APP_VERSION__
 const PATH_WEIGHT_FIELDS: Array<{
   key: keyof PathFinderWeights
@@ -311,6 +312,8 @@ function App() {
 
     const abortController = new AbortController()
     const runId = pathSearchRunIdRef.current + 1
+    let lastStatusExploredStates = 0
+    let lastStatusResultCount = 0
     pathSearchRunIdRef.current = runId
     pathSearchAbortRef.current = abortController
     void (async () => {
@@ -342,6 +345,18 @@ function App() {
                 return
               }
 
+              const shouldUpdateStatus =
+                progress.exploredStates === 0 ||
+                progress.exploredStates - lastStatusExploredStates >=
+                  PATH_SEARCH_STATUS_UPDATE_STATE_INTERVAL ||
+                progress.resultCount !== lastStatusResultCount
+
+              if (!shouldUpdateStatus) {
+                return
+              }
+
+              lastStatusExploredStates = progress.exploredStates
+              lastStatusResultCount = progress.resultCount
               setPathSearchProgress(progress)
               setPathSearchStatus(
                 `Searching... explored ${progress.exploredStates.toLocaleString()} states, queued ${progress.queuedStates.toLocaleString()}, found ${progress.resultCount} path${progress.resultCount === 1 ? '' : 's'}.`,
