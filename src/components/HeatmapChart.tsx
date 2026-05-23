@@ -128,7 +128,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
           )
         })}
 
-        <g transform={`translate(${width - margin.right - LEGEND_WIDTH} ${height - LEGEND_BOTTOM_OFFSET})`}>
+        <g transform={`translate(${width - margin.right - LEGEND_WIDTH}, ${height - LEGEND_BOTTOM_OFFSET})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
           <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#heatmap-legend-gradient)" />
           <text className="chart-label muted" x="0" y="28">1</text>

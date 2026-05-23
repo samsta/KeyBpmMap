@@ -148,7 +148,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
           })}
         </g>
 
-        <g transform={`translate(${LEGEND_X} ${LEGEND_Y})`}>
+        <g transform={`translate(${LEGEND_X}, ${LEGEND_Y})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
           <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#polar-legend-gradient)" />
           <text className="chart-label muted" x="0" y="28">1</text>
