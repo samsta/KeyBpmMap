@@ -158,6 +158,12 @@ function App() {
   const pathSearchAbortRef = useRef<AbortController | null>(null)
   const pathSearchRunIdRef = useRef(0)
 
+    // 1. Parse the current URL parameters
+  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  
+  // 2. Extract the specific feature flag (e.g., ?newNav=true)
+  const is_beta = searchParams.get('beta') === 'true';
+
   useEffect(() => {
     try {
       window.localStorage.setItem(KEY_REPRESENTATION_STORAGE_KEY, keyRepresentation)
@@ -1183,7 +1189,9 @@ function App() {
                       In Maps <span aria-hidden="true">{getScopeTrackSortIndicator('inMaps')}</span>
                     </button>
                   </th>
+                  {is_beta ? (
                   <th>Path Finder</th>
+                ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -1202,6 +1210,7 @@ function App() {
                           ? 'Yes'
                           : (track.bpm === null ? 'No (missing BPM)' : 'No (hidden by key filter)')}
                       </td>
+                      {is_beta ? (
                       <td>
                         <div className="track-actions">
                           <button
@@ -1224,6 +1233,7 @@ function App() {
                           </button>
                         </div>
                       </td>
+                      ) : null}
                     </tr>
                   )
                 })}
@@ -1233,6 +1243,7 @@ function App() {
         ) : null}
       </section>
 
+      {is_beta ? (
       <section className="panel pathfinder-panel">
         <div className="chart-header">
           <div>
@@ -1535,6 +1546,7 @@ function App() {
           <p className="placeholder-text">Pick Start Track and End Track, then click Find Path.</p>
         )}
       </section>
+        ) : null}
 
       <section className="visual-grid">
         <article className="panel chart-panel">
@@ -1674,6 +1686,7 @@ function App() {
                         <span>{formatVisibleKey(track.camelotKey)}</span>
                         <span>{formatRating(track)}</span>
                       </div>
+                      {is_beta ? (
                       <div className="track-actions">
                         <button
                           type="button"
@@ -1692,6 +1705,7 @@ function App() {
                           Set as End Track
                         </button>
                       </div>
+                      ) : null}
                     </li>
                   ))
                 ) : (
