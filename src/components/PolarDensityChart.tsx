@@ -27,8 +27,6 @@ const SELECTED_STROKE_MAX = 2.5
 const BAND_LABEL_FONT_MIN = 4
 const BAND_LABEL_FONT_MAX = 12.5
 const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
-const LEGEND_X = 220
-const LEGEND_Y = 580
 const LEGEND_WIDTH = 180
 const LEGEND_HEIGHT = 12
 
@@ -148,7 +146,7 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
           })}
         </g>
 
-        <g transform={`translate(${LEGEND_X}, ${LEGEND_Y})`}>
+        <g transform={`translate(${width - LEGEND_WIDTH - 20}, ${height - LEGEND_HEIGHT - 20})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
           <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#polar-legend-gradient)" />
           <text className="chart-label muted" x="0" y="28">1</text>
