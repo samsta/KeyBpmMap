@@ -369,10 +369,6 @@ export async function findNavigationPathsAsync(
   }
 
   const maybeYield = async () => {
-    if (expansionsSinceYield < expansionYieldThreshold) {
-      return true
-    }
-
     emitProgress()
     expansionsSinceYield = 0
     await new Promise<void>((resolve) => {
@@ -400,7 +396,7 @@ export async function findNavigationPathsAsync(
       break
     }
 
-    if (!(await maybeYield())) {
+    if (expansionsSinceYield >= expansionYieldThreshold && !(await maybeYield())) {
       return []
     }
 
@@ -441,7 +437,7 @@ export async function findNavigationPathsAsync(
 
     for (const nextTrack of tracks) {
       expansionsSinceYield += 1
-      if (!(await maybeYield())) {
+      if (expansionsSinceYield >= expansionYieldThreshold && !(await maybeYield())) {
         return []
       }
 

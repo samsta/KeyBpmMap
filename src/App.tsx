@@ -327,7 +327,7 @@ function App() {
         queuedStates: 1,
         resultCount: 0,
       })
-      setPathSearchStatus('Searching…')
+      setPathSearchStatus('Searching...')
 
       try {
         const paths = await findNavigationPathsAsync(
@@ -344,7 +344,7 @@ function App() {
 
               setPathSearchProgress(progress)
               setPathSearchStatus(
-                `Searching… explored ${progress.exploredStates.toLocaleString()} states, queued ${progress.queuedStates.toLocaleString()}, found ${progress.resultCount} path${progress.resultCount === 1 ? '' : 's'}.`,
+                `Searching... explored ${progress.exploredStates.toLocaleString()} states, queued ${progress.queuedStates.toLocaleString()}, found ${progress.resultCount} path${progress.resultCount === 1 ? '' : 's'}.`,
               )
             },
           },
@@ -692,7 +692,7 @@ function App() {
       return
     }
 
-    setPathSearchStatus('Preparing search…')
+    setPathSearchStatus('Preparing search...')
     setPathSearchProgress({
       exploredStates: 0,
       queuedStates: 1,
@@ -1363,7 +1363,7 @@ function App() {
         </fieldset>
         <div className="path-actions">
           <button type="button" className="primary-button" onClick={handleFindPath} disabled={isPathSearching}>
-            {isPathSearching ? 'Searching…' : 'Find Path'}
+            {isPathSearching ? 'Searching...' : 'Find Path'}
           </button>
           {isPathSearching ? (
             <button type="button" className="secondary-button" onClick={handleCancelPathSearch}>
