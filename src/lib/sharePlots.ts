@@ -112,4 +112,3 @@ export function getShareButtonLabel(platform: 'facebook' | 'instagram'): string 
   }
   return `Share to ${platform === 'facebook' ? 'Facebook' : 'Instagram'} (opens in new window)`
 }
-
