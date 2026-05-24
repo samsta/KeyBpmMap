@@ -18,30 +18,25 @@ export function generateShareMessage(options: SharePlotOptions): string {
 }
 
 /**
- * Creates a Facebook share URL
+ * Creates a Facebook share URL (without requiring an app ID)
+ * Uses the standard share endpoint which works for any website
  */
 export function createFacebookShareUrl(options: SharePlotOptions): string {
-  const message = generateShareMessage(options)
   const params = new URLSearchParams({
-    app_id: '12345', // Note: This is a placeholder; Facebook requires a real app ID
-    display: 'popup',
-    href: GITHUB_PAGES_URL,
-    quote: message,
+    u: GITHUB_PAGES_URL,
+    quote: `${options.chartName}: ${options.chartDescription}`,
   })
-  return `https://www.facebook.com/dialog/share?${params.toString()}`
+  return `https://www.facebook.com/sharer/sharer.php?${params.toString()}`
 }
 
 /**
  * Creates an Instagram share URL
- * Note: Instagram doesn't have direct web share functionality due to platform policies.
- * This provides a fallback that opens Instagram with the share message copied to clipboard.
+ * Note: Instagram does not provide a direct web-based share API.
+ * This function opens Instagram.com; users can manually share via their mobile app
+ * or use the clipboard-based sharing approach.
  */
-export function createInstagramShareUrl(options: SharePlotOptions): string {
-  const message = generateShareMessage(options)
-  const params = new URLSearchParams({
-    text: message,
-  })
-  return `https://www.instagram.com/?${params.toString()}`
+export function createInstagramShareUrl(): string {
+  return 'https://www.instagram.com/'
 }
 
 /**
@@ -73,27 +68,36 @@ export async function sharePlot(
   }
 
   // Fallback: Open platform-specific share URLs
-  const url =
-    platform === 'facebook'
-      ? createFacebookShareUrl(options)
-      : createInstagramShareUrl(options)
-
-  // Copy message to clipboard for Instagram (since it doesn't have direct share links)
-  if (platform === 'instagram' && navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(message)
-      alert('Message copied to clipboard! Open Instagram and paste it in your post.')
-    } catch (err) {
-      console.warn('Failed to copy to clipboard:', err)
+  if (platform === 'facebook') {
+    const facebookUrl = createFacebookShareUrl(options)
+    window.open(facebookUrl, '_blank', 'width=600,height=600')
+  } else {
+    // Instagram fallback: Copy message to clipboard and open Instagram
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(message)
+        console.log(
+          'Message copied to clipboard! Open Instagram and paste it in your post caption.',
+        )
+        // Open Instagram in a new window
+        window.open(createInstagramShareUrl(), '_blank')
+      } catch (err) {
+        console.warn('Failed to copy to clipboard:', err)
+        window.open(createInstagramShareUrl(), '_blank')
+      }
+    } else {
+      console.log(
+        'Please copy this message and share it on Instagram:',
+        message,
+      )
+      window.open(createInstagramShareUrl(), '_blank')
     }
   }
-
-  // Open the platform URL in a new window
-  window.open(url, '_blank', 'width=600,height=600')
 }
 
 /**
- * Checks if the browser supports social sharing
+ * Checks if the browser supports the Web Share API
+ * Useful for conditionally showing share buttons or adjusting UI
  */
 export function canShare(): boolean {
   return typeof navigator !== 'undefined' && 'share' in navigator
@@ -106,5 +110,6 @@ export function getShareButtonLabel(platform: 'facebook' | 'instagram'): string 
   if (typeof navigator !== 'undefined' && 'share' in navigator) {
     return `Share to ${platform === 'facebook' ? 'Facebook' : 'Instagram'}`
   }
-  return `Share to ${platform === 'facebook' ? 'Facebook' : 'Instagram'} (new window)`
+  return `Share to ${platform === 'facebook' ? 'Facebook' : 'Instagram'} (opens in new window)`
 }
+
