@@ -14,7 +14,7 @@ import {
 } from './lib/analysis'
 import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
 import { downloadSvgAsPng } from './lib/exportSvg'
-import { getShareButtonLabel, sharePlot } from './lib/sharePlots'
+import { sharePlot } from './lib/sharePlots'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
 import {
@@ -782,18 +782,22 @@ function App() {
   }
 
   const sharePolarChart = async (platform: 'facebook' | 'instagram') => {
+    if (!polarRef.current) return
     await sharePlot(platform, {
       chartName: 'Polar Harmonic Density Map',
       chartDescription:
         'Exploring my music library with a polar density map showing harmonic key distribution by tempo.',
+      svgElement: polarRef.current,
     })
   }
 
   const shareHeatmapChart = async (platform: 'facebook' | 'instagram') => {
+    if (!heatmapRef.current) return
     await sharePlot(platform, {
       chartName: 'BPM vs Key Heatmap',
       chartDescription:
         'Analyzing my music library with a heatmap showing the relationship between tempo and harmonic key.',
+      svgElement: heatmapRef.current,
     })
   }
 
@@ -1599,7 +1603,7 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                title={getShareButtonLabel('facebook')}
+                title="Share to Facebook"
                 onClick={() => sharePolarChart('facebook')}
               >
                 Share to Facebook
@@ -1607,7 +1611,7 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                title={getShareButtonLabel('instagram')}
+                title="Share to Instagram"
                 onClick={() => sharePolarChart('instagram')}
               >
                 Share to Instagram
@@ -1659,7 +1663,7 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                title={getShareButtonLabel('facebook')}
+                title="Share to Facebook"
                 onClick={() => shareHeatmapChart('facebook')}
               >
                 Share to Facebook
@@ -1667,7 +1671,7 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                title={getShareButtonLabel('instagram')}
+                title="Share to Instagram"
                 onClick={() => shareHeatmapChart('instagram')}
               >
                 Share to Instagram
