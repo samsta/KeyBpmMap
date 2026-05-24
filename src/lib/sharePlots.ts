@@ -164,7 +164,7 @@ function showShareDialog(
       2. Go to <a href="https://www.facebook.com" target="_blank" style="color: #4267B2; text-decoration: none;">Facebook.com</a><br>
       3. Create a new post and upload the image<br>
       4. Add this caption:<br>
-      <code style="display: block; background: #0a0d14; padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 12px; overflow-x: auto;">${escapeHtml(message)}</code>
+      <code style="display: block; background: #0a0d14; padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 12px; overflow-x: auto; word-break: break-word;">${escapeHtml(message)}</code>
     `
   } else {
     description.innerHTML = `
