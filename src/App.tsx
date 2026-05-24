@@ -14,6 +14,7 @@ import {
 } from './lib/analysis'
 import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
 import { downloadSvgAsPng } from './lib/exportSvg'
+import { getShareButtonLabel, sharePlot } from './lib/sharePlots'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
 import {
@@ -778,6 +779,22 @@ function App() {
     }
 
     await downloadSvgAsPng(svgElement, fileName)
+  }
+
+  const sharePolarChart = async (platform: 'facebook' | 'instagram') => {
+    await sharePlot(platform, {
+      chartName: 'Polar Harmonic Density Map',
+      chartDescription:
+        'Exploring my music library with a polar density map showing harmonic key distribution by tempo.',
+    })
+  }
+
+  const shareHeatmapChart = async (platform: 'facebook' | 'instagram') => {
+    await sharePlot(platform, {
+      chartName: 'BPM vs Key Heatmap',
+      chartDescription:
+        'Analyzing my music library with a heatmap showing the relationship between tempo and harmonic key.',
+    })
   }
 
   const selectedPlaylistName =
@@ -1579,6 +1596,22 @@ function App() {
               >
                 Export PNG
               </button>
+              <button
+                type="button"
+                className="secondary-button"
+                title={getShareButtonLabel('facebook')}
+                onClick={() => sharePolarChart('facebook')}
+              >
+                Share to Facebook
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                title={getShareButtonLabel('instagram')}
+                onClick={() => sharePolarChart('instagram')}
+              >
+                Share to Instagram
+              </button>
             </div>
           </div>
           <PolarDensityChart
@@ -1622,6 +1655,22 @@ function App() {
                 onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.png')}
               >
                 Export PNG
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                title={getShareButtonLabel('facebook')}
+                onClick={() => shareHeatmapChart('facebook')}
+              >
+                Share to Facebook
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                title={getShareButtonLabel('instagram')}
+                onClick={() => shareHeatmapChart('instagram')}
+              >
+                Share to Instagram
               </button>
             </div>
           </div>
