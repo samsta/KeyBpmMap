@@ -18,7 +18,7 @@ It reads local Engine DJ SQLite databases and Traktor `collection.nml` files dir
 - Playlist transition summaries derived from playlist ordering
 - Sparse / missing region surfacing
 - Mock dataset mode for first-run exploration
-- PNG export for both charts
+- PNG and PDF export for both charts
 - GitHub Pages-ready static deployment
 
 ## Local development
