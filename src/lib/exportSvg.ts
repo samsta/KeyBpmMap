@@ -115,7 +115,11 @@ function triggerDownload(href: string, fileName: string): void {
   anchor.click()
 }
 
-function createPdfFromJpegDataUrl(dataUrl: string, width: number, height: number): Uint8Array {
+function createPdfFromJpegDataUrl(
+  dataUrl: string,
+  width: number,
+  height: number,
+): Uint8Array<ArrayBuffer> {
   const base64Data = dataUrl.split(',')[1]
 
   if (!base64Data) {
@@ -129,7 +133,7 @@ function createPdfFromJpegDataUrl(dataUrl: string, width: number, height: number
     jpegBytes[byteIndex] = jpegBinary.charCodeAt(byteIndex)
   }
 
-  const objects: Uint8Array[] = []
+  const objects: Uint8Array<ArrayBuffer>[] = []
   const offsets: number[] = [0]
   const encoder = new TextEncoder()
 
@@ -174,7 +178,7 @@ function createPdfFromJpegDataUrl(dataUrl: string, width: number, height: number
   return concatUint8Arrays([encoder.encode('%PDF-1.4\n'), ...objects, xrefHeader, xrefData, trailer])
 }
 
-function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
+function concatUint8Arrays(chunks: Uint8Array<ArrayBuffer>[]): Uint8Array<ArrayBuffer> {
   const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
   const output = new Uint8Array(totalLength)
   let offset = 0
