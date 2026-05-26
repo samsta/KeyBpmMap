@@ -2,7 +2,6 @@ import { scaleLinear, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
 import type { BpmBand, DensityCell } from '../types'
-import { PLASMA_GRADIENT_STOPS } from './plasmaLegend'
 
 interface HeatmapChartProps {
   bands: BpmBand[]
@@ -21,6 +20,7 @@ const MIN_HEIGHT_PX = 420
 const LEGEND_WIDTH = 180
 const LEGEND_HEIGHT = 12
 const LEGEND_BOTTOM_OFFSET = 38
+const LEGEND_SEGMENT_COUNT = 48
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
   ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
@@ -56,13 +56,6 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
         role="img"
         aria-label="BPM by key heatmap"
       >
-        <defs>
-          <linearGradient id="heatmap-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            {PLASMA_GRADIENT_STOPS.map((stop) => (
-              <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
-            ))}
-          </linearGradient>
-        </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
 
         {cells.map((cell) => {
@@ -130,7 +123,21 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
 
         <g transform={`translate(${width - margin.right - LEGEND_WIDTH}, ${height - LEGEND_BOTTOM_OFFSET})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
-          <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#heatmap-legend-gradient)" />
+          {Array.from({ length: LEGEND_SEGMENT_COUNT }, (_, index) => {
+            const segmentWidth = LEGEND_WIDTH / LEGEND_SEGMENT_COUNT
+            const x = index * segmentWidth
+
+            return (
+              <rect
+                key={`legend-segment-${index}`}
+                x={x}
+                y="0"
+                width={segmentWidth + 0.5}
+                height={LEGEND_HEIGHT}
+                fill={interpolatePlasma(index / (LEGEND_SEGMENT_COUNT - 1))}
+              />
+            )
+          })}
           <text className="chart-label muted" x="0" y="28">1</text>
           <text className="chart-label muted" x={LEGEND_WIDTH} y="28" textAnchor="end">{legendMaxCount}</text>
         </g>

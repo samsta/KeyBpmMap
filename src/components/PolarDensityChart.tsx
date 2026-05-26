@@ -2,7 +2,6 @@ import { arc, scaleSequential } from 'd3'
 import { interpolatePlasma } from 'd3-scale-chromatic'
 import { forwardRef, useMemo } from 'react'
 import type { BpmBand, DensityCell } from '../types'
-import { PLASMA_GRADIENT_STOPS } from './plasmaLegend'
 
 interface PolarDensityChartProps {
   bands: BpmBand[]
@@ -29,6 +28,7 @@ const BAND_LABEL_FONT_MAX = 12.5
 const BAND_LABEL_REFERENCE_RING_HEIGHT = 18
 const LEGEND_WIDTH = 180
 const LEGEND_HEIGHT = 12
+const LEGEND_SEGMENT_COUNT = 48
 
 const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
   ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
@@ -69,13 +69,6 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
         role="img"
         aria-label="Polar harmonic density map"
       >
-        <defs>
-          <linearGradient id="polar-legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            {PLASMA_GRADIENT_STOPS.map((stop) => (
-              <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
-            ))}
-          </linearGradient>
-        </defs>
         <rect width={width} height={height} fill="#080b14" rx="20" />
         <g transform={`translate(${width / 2}, ${height / 2})`}>
           {bands.map((band, index) => (
@@ -148,7 +141,21 @@ const PolarDensityChart = forwardRef<SVGSVGElement, PolarDensityChartProps>(
 
         <g transform={`translate(${width - LEGEND_WIDTH - 20}, ${height - LEGEND_HEIGHT - 20})`}>
           <text className="chart-label" x="0" y="-10">Tracks in cell</text>
-          <rect x="0" y="0" width={LEGEND_WIDTH} height={LEGEND_HEIGHT} rx="6" fill="url(#polar-legend-gradient)" />
+          {Array.from({ length: LEGEND_SEGMENT_COUNT }, (_, index) => {
+            const segmentWidth = LEGEND_WIDTH / LEGEND_SEGMENT_COUNT
+            const x = index * segmentWidth
+
+            return (
+              <rect
+                key={`legend-segment-${index}`}
+                x={x}
+                y="0"
+                width={segmentWidth + 0.5}
+                height={LEGEND_HEIGHT}
+                fill={interpolatePlasma(index / (LEGEND_SEGMENT_COUNT - 1))}
+              />
+            )
+          })}
           <text className="chart-label muted" x="0" y="28">1</text>
           <text className="chart-label muted" x={LEGEND_WIDTH} y="28" textAnchor="end">{legendMaxCount}</text>
         </g>
