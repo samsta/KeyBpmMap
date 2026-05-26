@@ -13,7 +13,7 @@ import {
   summarizeTracks,
 } from './lib/analysis'
 import { CAMELOT_KEYS, formatKey, type KeyRepresentation } from './lib/camelot'
-import { downloadSvgAsPng } from './lib/exportSvg'
+import { downloadSvgAsPdf, downloadSvgAsPng } from './lib/exportSvg'
 import { loadLibraryFromFile } from './lib/libraryLoader'
 import { createMockLibrary } from './lib/mockData'
 import {
@@ -772,8 +772,14 @@ function App() {
   const exportChart = async (
     svgElement: SVGSVGElement | null,
     fileName: string,
+    format: 'png' | 'pdf',
   ) => {
     if (!svgElement) {
+      return
+    }
+
+    if (format === 'pdf') {
+      await downloadSvgAsPdf(svgElement, fileName)
       return
     }
 
@@ -875,7 +881,7 @@ function App() {
           <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
           <li>Reads Rekordbox XML exports locally in the browser.</li>
           <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
-          <li>Exports both charts as PNG snapshots.</li>
+          <li>Exports both charts as PNG and PDF snapshots.</li>
         </ul>
         <div className="hero-social-links" aria-label="Skonoks links">
           Find my music and socials:
@@ -1575,9 +1581,16 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => exportChart(polarRef.current, 'keybpmmap-polar.png')}
+                onClick={() => exportChart(polarRef.current, 'keybpmmap-polar.png', 'png')}
               >
                 Export PNG
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => exportChart(polarRef.current, 'keybpmmap-polar.pdf', 'pdf')}
+              >
+                Export PDF
               </button>
             </div>
           </div>
@@ -1619,9 +1632,16 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.png')}
+                onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.png', 'png')}
               >
                 Export PNG
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => exportChart(heatmapRef.current, 'keybpmmap-heatmap.pdf', 'pdf')}
+              >
+                Export PDF
               </button>
             </div>
           </div>

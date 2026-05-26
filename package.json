@@ -1,10 +1,11 @@
 {
   "name": "keybpmmap",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "devhost": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -13,9 +14,11 @@
   "dependencies": {
     "d3": "^7.9.0",
     "fast-xml-parser": "^5.8.0",
+    "jspdf": "^4.2.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "sql.js": "^1.14.1"
+    "sql.js": "^1.14.1",
+    "svg2pdf.js": "^2.7.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
