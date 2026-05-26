@@ -1,3 +1,6 @@
+import { jsPDF } from 'jspdf'
+import 'svg2pdf.js'
+
 export async function downloadSvgAsPng(
   svgElement: SVGSVGElement,
   fileName: string,
@@ -16,37 +19,40 @@ export async function downloadSvgAsPdf(
   svgElement: SVGSVGElement,
   fileName: string,
 ): Promise<void> {
-  const { canvas, url } = await renderSvgToCanvas(svgElement)
+  const { clonedSvg, width, height } = cloneSvgForExport(svgElement)
   let downloadUrl: string | null = null
 
   try {
-    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.95)
-    const pdfData = createPdfFromJpegDataUrl(jpegDataUrl, canvas.width, canvas.height)
-    const pdfBlob = new Blob([pdfData], { type: 'application/pdf' })
+    const pdf = new jsPDF({
+      compress: true,
+      format: [width, height],
+      orientation: width > height ? 'landscape' : 'portrait',
+      unit: 'pt',
+    })
+
+    await pdf.svg(clonedSvg, { height, width, x: 0, y: 0 })
+
+    const pdfBuffer = pdf.output('arraybuffer')
+    const pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' })
     downloadUrl = URL.createObjectURL(pdfBlob)
     triggerDownload(downloadUrl, fileName)
   } finally {
     if (downloadUrl) {
       URL.revokeObjectURL(downloadUrl)
     }
-    URL.revokeObjectURL(url)
   }
 }
 
 async function renderSvgToCanvas(
   svgElement: SVGSVGElement,
 ): Promise<{ canvas: HTMLCanvasElement; url: string }> {
-  const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
-  inlineTextStyles(svgElement, clonedSvg)
+  const { clonedSvg, height, width } = cloneSvgForExport(svgElement)
   const serializer = new XMLSerializer()
   const source = serializer.serializeToString(clonedSvg)
   const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   try {
     const image = await loadImage(url)
-    const viewBox = svgElement.viewBox.baseVal
-    const width = viewBox.width || svgElement.clientWidth || 1200
-    const height = viewBox.height || svgElement.clientHeight || 800
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
@@ -65,6 +71,28 @@ async function renderSvgToCanvas(
     URL.revokeObjectURL(url)
     throw error
   }
+}
+
+function cloneSvgForExport(
+  svgElement: SVGSVGElement,
+): { clonedSvg: SVGSVGElement; height: number; width: number } {
+  const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+  const { height, width } = getSvgExportDimensions(svgElement)
+
+  clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  clonedSvg.setAttribute('width', width.toString())
+  clonedSvg.setAttribute('height', height.toString())
+  inlineTextStyles(svgElement, clonedSvg)
+
+  return { clonedSvg, height, width }
+}
+
+function getSvgExportDimensions(svgElement: SVGSVGElement): { height: number; width: number } {
+  const viewBox = svgElement.viewBox.baseVal
+  const width = Math.max(1, Math.round(viewBox.width || svgElement.clientWidth || 1200))
+  const height = Math.max(1, Math.round(viewBox.height || svgElement.clientHeight || 800))
+
+  return { height, width }
 }
 
 function inlineTextStyles(sourceSvg: SVGSVGElement, targetSvg: SVGSVGElement): void {
@@ -113,80 +141,4 @@ function triggerDownload(href: string, fileName: string): void {
   anchor.href = href
   anchor.download = fileName
   anchor.click()
-}
-
-function createPdfFromJpegDataUrl(
-  dataUrl: string,
-  width: number,
-  height: number,
-): Uint8Array<ArrayBuffer> {
-  const base64Data = dataUrl.split(',')[1]
-
-  if (!base64Data) {
-    throw new Error('Unable to encode chart image for PDF export.')
-  }
-
-  const jpegBinary = atob(base64Data)
-  const jpegBytes = new Uint8Array(jpegBinary.length)
-
-  for (let byteIndex = 0; byteIndex < jpegBinary.length; byteIndex += 1) {
-    jpegBytes[byteIndex] = jpegBinary.charCodeAt(byteIndex)
-  }
-
-  const objects: Uint8Array<ArrayBuffer>[] = []
-  const offsets: number[] = [0]
-  const encoder = new TextEncoder()
-
-  const pageWidth = Math.max(1, Math.round(width))
-  const pageHeight = Math.max(1, Math.round(height))
-  const imageObject = encoder.encode(
-    `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pageWidth} /Height ${pageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`,
-  )
-  const imageObjectEnd = encoder.encode('\nendstream\nendobj\n')
-  const contentStream = encoder.encode(`q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im0 Do\nQ\n`)
-  const contentObject = encoder.encode(`5 0 obj\n<< /Length ${contentStream.length} >>\nstream\n`)
-  const contentObjectEnd = encoder.encode('endstream\nendobj\n')
-
-  objects.push(encoder.encode('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'))
-  objects.push(encoder.encode('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'))
-  objects.push(
-    encoder.encode(
-      `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`,
-    ),
-  )
-  objects.push(concatUint8Arrays([imageObject, jpegBytes, imageObjectEnd]))
-  objects.push(concatUint8Arrays([contentObject, contentStream, contentObjectEnd]))
-
-  let currentOffset = encoder.encode('%PDF-1.4\n').length
-  for (const objectData of objects) {
-    offsets.push(currentOffset)
-    currentOffset += objectData.length
-  }
-
-  const xrefStart = currentOffset
-  const xrefHeader = encoder.encode(`xref\n0 ${objects.length + 1}\n`)
-  const xrefRows = offsets
-    .map((offset, index) =>
-      index === 0 ? '0000000000 65535 f \n' : `${offset.toString().padStart(10, '0')} 00000 n \n`,
-    )
-    .join('')
-  const xrefData = encoder.encode(xrefRows)
-  const trailer = encoder.encode(
-    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`,
-  )
-
-  return concatUint8Arrays([encoder.encode('%PDF-1.4\n'), ...objects, xrefHeader, xrefData, trailer])
-}
-
-function concatUint8Arrays(chunks: Uint8Array<ArrayBuffer>[]): Uint8Array<ArrayBuffer> {
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-  const output = new Uint8Array(totalLength)
-  let offset = 0
-
-  for (const chunk of chunks) {
-    output.set(chunk, offset)
-    offset += chunk.length
-  }
-
-  return output
 }
