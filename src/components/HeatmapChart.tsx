@@ -20,7 +20,7 @@ const MIN_HEIGHT_PX = 420
 const LEGEND_WIDTH = 180
 const LEGEND_HEIGHT = 12
 const LEGEND_BOTTOM_OFFSET = 38
-const LEGEND_SEGMENT_COUNT = 48
+const LEGEND_SEGMENT_COUNT = 90
 
 const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
   ({ bands, cells, keys, legendMaxCount, formatKeyLabel, selectedCellId, onSelect }, ref) => {
@@ -132,7 +132,7 @@ const HeatmapChart = forwardRef<SVGSVGElement, HeatmapChartProps>(
                 key={`legend-segment-${index}`}
                 x={x}
                 y="0"
-                width={segmentWidth + 0.5}
+                width={segmentWidth*2} // Add a little overlap to prevent jagged edges due to anti-aliasing
                 height={LEGEND_HEIGHT}
                 fill={interpolatePlasma(index / (LEGEND_SEGMENT_COUNT - 1))}
               />
