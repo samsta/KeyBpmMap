@@ -785,6 +785,15 @@ function App() {
 
     await downloadSvgAsPng(svgElement, fileName)
   }
+  const exportHeatmapCsv = () => {
+    const csvContent = createHeatmapCsv({
+      bands: bpmBands,
+      cells: visibleKeyCells,
+      keys: polarKeys,
+      formatKeyLabel: formatVisibleKey,
+    })
+    downloadTextFile(csvContent, 'keybpmmap-heatmap.csv', 'text/csv;charset=utf-8')
+  }
 
   const selectedPlaylistName =
     filters.playlistId === 'all'
@@ -881,7 +890,7 @@ function App() {
           <li>Reads Traktor collection.nml files and their backups locally in the browser.</li>
           <li>Reads Rekordbox XML exports locally in the browser.</li>
           <li>Understands Engine DJ, Traktor, and Rekordbox playlist relationships.</li>
-          <li>Exports both charts as PNG and PDF snapshots.</li>
+          <li>Exports charts as PNG and PDF snapshots, plus heatmap CSV data.</li>
         </ul>
         <div className="hero-social-links" aria-label="Skonoks links">
           Find my music and socials:
@@ -1643,6 +1652,13 @@ function App() {
               >
                 Export PDF
               </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={exportHeatmapCsv}
+              >
+                Export CSV
+              </button>
             </div>
           </div>
           <HeatmapChart
@@ -1911,6 +1927,56 @@ function formatKeyRepresentationLabel(representation: KeyRepresentation): string
     case 'camelot':
     default:
       return 'Camelot'
+  }
+}
+
+function createHeatmapCsv({
+  bands,
+  cells,
+  keys,
+  formatKeyLabel,
+}: {
+  bands: Array<{ label: string }>
+  cells: Array<{ bandIndex: number; camelotKey: string; count: number }>
+  keys: string[]
+  formatKeyLabel: (camelotKey: string) => string
+}): string {
+  const headingRow = ['BPM', ...keys.map((camelotKey) => formatKeyLabel(camelotKey))]
+  const countLookup = new Map<string, number>()
+
+  for (const cell of cells) {
+    countLookup.set(`${cell.bandIndex}:${cell.camelotKey}`, cell.count)
+  }
+
+  const rows = bands.map((band, bandIndex) => [
+    band.label,
+    ...keys.map((camelotKey) => String(countLookup.get(`${bandIndex}:${camelotKey}`) ?? 0)),
+  ])
+
+  return [headingRow, ...rows]
+    .map((row) => row.map(escapeCsvField).join(','))
+    .join('\n')
+}
+
+function escapeCsvField(value: string): string {
+  if (!/[",\n\r]/.test(value)) {
+    return value
+  }
+
+  return `"${value.replaceAll('"', '""')}"`
+}
+
+function downloadTextFile(content: string, fileName: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType })
+  const href = URL.createObjectURL(blob)
+
+  try {
+    const anchor = document.createElement('a')
+    anchor.href = href
+    anchor.download = fileName
+    anchor.click()
+  } finally {
+    URL.revokeObjectURL(href)
   }
 }
 
